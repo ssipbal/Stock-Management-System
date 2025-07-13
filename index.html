@@ -169,14 +169,13 @@
 
       const url = `${stockURL}?item=${encodeURIComponent(item)}&action=${encodeURIComponent(action)}&quantity=${encodeURIComponent(quantity)}`;
 
-      fetch(url)
-        .then((response) => response.text())
-        .then((data) => {
-          document.getElementById("response").innerText = "Submitted successfully!";
+      fetch(url, { mode: 'no-cors' })
+        .then(() => {
+          document.getElementById("response").innerText = "✅ Submitted (no-cors mode)";
           updateLiveStock(); // Refresh stock after submit
         })
         .catch((error) => {
-          document.getElementById("response").innerText = "Error submitting: " + error;
+          document.getElementById("response").innerText = "❌ Error submitting: " + error;
         });
     });
   </script>
