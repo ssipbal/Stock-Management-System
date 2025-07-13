@@ -6,10 +6,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet" />
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
+    /* Your styles unchanged */
+    * { box-sizing: border-box; }
     body {
       margin: 0;
       font-family: 'Sarabun', sans-serif;
@@ -21,7 +19,6 @@
       min-height: 100vh;
       padding: 20px;
     }
-
     .container {
       background: white;
       border-radius: 16px;
@@ -31,13 +28,11 @@
       padding: 30px;
       text-align: center;
     }
-
     h1 {
       font-size: 24px;
       margin-bottom: 20px;
       color: #2c3e50;
     }
-
     label {
       display: block;
       text-align: left;
@@ -46,7 +41,6 @@
       font-weight: 600;
       font-size: 14px;
     }
-
     input, select {
       width: 100%;
       padding: 10px;
@@ -56,7 +50,6 @@
       margin-bottom: 10px;
       font-family: 'Sarabun', sans-serif;
     }
-
     button {
       width: 100%;
       padding: 12px;
@@ -69,18 +62,15 @@
       font-weight: 600;
       transition: background-color 0.3s ease;
     }
-
     button:hover {
       background-color: #005fa3;
     }
-
     #response {
       margin-top: 15px;
       font-size: 14px;
       font-weight: 500;
       color: green;
     }
-
     #stock-list {
       padding-left: 0;
       list-style: none;
@@ -88,16 +78,13 @@
       font-size: 15px;
       margin-bottom: 20px;
     }
-
     #stock-list li {
       margin-bottom: 4px;
     }
-
     @media (max-width: 500px) {
       .container {
         padding: 20px;
       }
-
       h1 {
         font-size: 20px;
       }
@@ -143,7 +130,10 @@
 
     function updateLiveStock() {
       fetch(stockURL)
-        .then(response => response.json())
+        .then(response => {
+          if (!response.ok) throw new Error('Failed to fetch stock');
+          return response.json();
+        })
         .then(data => {
           const list = document.getElementById("stock-list");
           list.innerHTML = '';
@@ -155,6 +145,7 @@
         })
         .catch(err => {
           document.getElementById("stock-list").innerHTML = "<li>Failed to load stock.</li>";
+          console.error(err);
         });
     }
 
@@ -169,7 +160,7 @@
 
       const url = `${stockURL}?item=${encodeURIComponent(item)}&action=${encodeURIComponent(action)}&quantity=${encodeURIComponent(quantity)}`;
 
-      fetch(url, { mode: 'cors', credentials: 'omit' })
+      fetch(url)
         .then(response => {
           if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
           return response.json();
@@ -180,6 +171,7 @@
         })
         .catch((error) => {
           document.getElementById("response").innerText = "❌ Error submitting: " + error;
+          console.error(error);
         });
     });
   </script>
