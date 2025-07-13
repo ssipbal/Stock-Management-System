@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cookie Stock Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      text-align: center;
+      padding: 60px;
+    }
+    h1 {
+      color: #333;
+    }
+    input, select, button {
+      font-size: 18px;
+      margin: 10px;
+      padding: 10px 20px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+  </style>
+</head>
+<body>
+  <h1>🍪 Cookie Stock Manager</h1>
+  <form id="stockForm">
+    <label for="amount">Quantity:</label><br>
+    <input type="number" id="quantity" name="quantity" min="1" required><br>
+
+    <label for="action">Action:</label><br>
+    <select id="action" name="action">
+      <option value="Add">Add</option>
+      <option value="Remove">Remove</option>
+    </select><br><br>
+
+    <button type="submit">Submit</button>
+  </form>
+
+  <p id="response" style="margin-top:20px;"></p>
+
+  <script>
+    document.getElementById("stockForm").addEventListener("submit", function(e) {
+      e.preventDefault();
+
+      const quantity = document.getElementById("quantity").value;
+      const action = document.getElementById("action").value;
+
+      const item = "Cookie";
+      const url = `https://script.google.com/macros/s/AKfycbx0qYI1krOTEk2QgFD49sTQrPwMYIkWaQK6xe-o7pQPY27BUVo4aNbC_KSi4gneRa6K/exec?item=${encodeURIComponent(item)}&action=${encodeURIComponent(action)}&quantity=${encodeURIComponent(quantity)}`;
+
+      fetch(url)
+        .then(response => response.text())
+        .then(data => {
+          document.getElementById("response").innerText = "✅ Submitted successfully!";
+        })
+        .catch(error => {
+          document.getElementById("response").innerText = "❌ Error submitting: " + error;
+        });
+    });
+  </script>
+</body>
+</html>
