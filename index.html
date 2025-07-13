@@ -26,7 +26,7 @@
       background: white;
       border-radius: 16px;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      max-width: 400px;
+      max-width: 420px;
       width: 100%;
       padding: 30px;
       text-align: center;
@@ -81,6 +81,18 @@
       color: green;
     }
 
+    #stock-list {
+      padding-left: 0;
+      list-style: none;
+      text-align: left;
+      font-size: 15px;
+      margin-bottom: 20px;
+    }
+
+    #stock-list li {
+      margin-bottom: 4px;
+    }
+
     @media (max-width: 500px) {
       .container {
         padding: 20px;
@@ -94,7 +106,15 @@
 </head>
 <body>
   <div class="container">
-    <h1>NFC Smart Inventory</h1>
+    <h1>NFC Smart Inventory Management System</h1>
+
+    <div id="live-stock">
+      <h3>📊 Current Stock</h3>
+      <ul id="stock-list">
+        <li>Loading...</li>
+      </ul>
+    </div>
+
     <form id="stockForm">
       <label for="item">Item</label>
       <select id="item" name="item" required>
@@ -119,6 +139,27 @@
   </div>
 
   <script>
+    const stockURL = 'https://script.google.com/macros/s/AKfycbzJr3K3TkyM0EM0AAu1Fi_vJGkzQ24y6K3xzQZnu1Iu15ya41brlOKl5rV8j5-5LJHN/exec';
+
+    function updateLiveStock() {
+      fetch(stockURL)
+        .then(response => response.json())
+        .then(data => {
+          const list = document.getElementById("stock-list");
+          list.innerHTML = '';
+          for (const item in data) {
+            const li = document.createElement("li");
+            li.textContent = `${item}: ${data[item]}`;
+            list.appendChild(li);
+          }
+        })
+        .catch(err => {
+          document.getElementById("stock-list").innerHTML = "<li>❌ Failed to load stock.</li>";
+        });
+    }
+
+    updateLiveStock();
+
     document.getElementById("stockForm").addEventListener("submit", function (e) {
       e.preventDefault();
 
@@ -126,14 +167,13 @@
       const quantity = document.getElementById("quantity").value;
       const action = document.getElementById("action").value;
 
-      const url = `https://script.google.com/macros/s/AKfycbx0qYI1krOTEk2QgFD49sTQrPwMYIkWaQK6xe-o7pQPY27BUVo4aNbC_KSi4gneRa6K/exec?item=${encodeURIComponent(
-        item
-      )}&action=${encodeURIComponent(action)}&quantity=${encodeURIComponent(quantity)}`;
+      const url = `${stockURL}?item=${encodeURIComponent(item)}&action=${encodeURIComponent(action)}&quantity=${encodeURIComponent(quantity)}`;
 
       fetch(url)
         .then((response) => response.text())
         .then((data) => {
           document.getElementById("response").innerText = "✅ Submitted successfully!";
+          updateLiveStock(); // Refresh stock after submit
         })
         .catch((error) => {
           document.getElementById("response").innerText = "❌ Error submitting: " + error;
