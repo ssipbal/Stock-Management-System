@@ -1,81 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>NFC Smart Inventory Management System</title>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet" />
   <style>
+    * {
+      box-sizing: border-box;
+    }
+
     body {
+      margin: 0;
       font-family: 'Sarabun', sans-serif;
-      background: #f0f4f8;
+      background: #eef3f7;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      max-width: 400px;
+      width: 100%;
+      padding: 30px;
       text-align: center;
-      padding: 60px;
     }
+
     h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
       color: #2c3e50;
-      font-size: 32px;
+    }
+
+    label {
+      display: block;
+      text-align: left;
+      margin-top: 15px;
+      margin-bottom: 5px;
       font-weight: 600;
+      font-size: 14px;
     }
-    input, select, button {
-      font-family: 'Sarabun', sans-serif;
-      font-size: 18px;
-      margin: 10px;
-      padding: 10px 20px;
-      border-radius: 8px;
+
+    input, select {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
       border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      font-family: 'Sarabun', sans-serif;
     }
+
     button {
-      background-color: #4CAF50;
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      background-color: #007acc;
       color: white;
       border: none;
-      transition: background-color 0.2s ease;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
     }
+
     button:hover {
-      background-color: #45a049;
+      background-color: #005fa3;
+    }
+
+    #response {
+      margin-top: 15px;
+      font-size: 14px;
+      font-weight: 500;
+      color: green;
+    }
+
+    @media (max-width: 500px) {
+      .container {
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 20px;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>📦 NFC Smart Inventory Management System</h1>
-  <form id="stockForm">
-    <label for="item">Item:</label><br>
-    <select id="item" name="item" required>
-      <option value="Cookie">🍪 Cookie</option>
-      <option value="Brownie">🍫 Brownie</option>
-      <option value="Macaron">🍥 Macaron</option>
-    </select><br>
+  <div class="container">
+    <h1>NFC Smart Inventory</h1>
+    <form id="stockForm">
+      <label for="item">Item</label>
+      <select id="item" name="item" required>
+        <option value="Cookie">Cookie</option>
+        <option value="Brownie">Brownie</option>
+        <option value="Macaron">Macaron</option>
+      </select>
 
-    <label for="quantity">Quantity:</label><br>
-    <input type="number" id="quantity" name="quantity" min="1" required><br>
+      <label for="quantity">Quantity</label>
+      <input type="number" id="quantity" name="quantity" min="1" required />
 
-    <label for="action">Action:</label><br>
-    <select id="action" name="action" required>
-      <option value="Add">Add</option>
-      <option value="Remove">Remove</option>
-    </select><br><br>
+      <label for="action">Action</label>
+      <select id="action" name="action" required>
+        <option value="Add">Add</option>
+        <option value="Remove">Remove</option>
+      </select>
 
-    <button type="submit">Submit</button>
-  </form>
+      <button type="submit">Submit</button>
+    </form>
 
-  <p id="response" style="margin-top:20px;"></p>
+    <p id="response"></p>
+  </div>
 
   <script>
-    document.getElementById("stockForm").addEventListener("submit", function(e) {
+    document.getElementById("stockForm").addEventListener("submit", function (e) {
       e.preventDefault();
 
       const item = document.getElementById("item").value;
       const quantity = document.getElementById("quantity").value;
       const action = document.getElementById("action").value;
 
-      const url = `https://script.google.com/macros/s/AKfycbx0qYI1krOTEk2QgFD49sTQrPwMYIkWaQK6xe-o7pQPY27BUVo4aNbC_KSi4gneRa6K/exec?item=${encodeURIComponent(item)}&action=${encodeURIComponent(action)}&quantity=${encodeURIComponent(quantity)}`;
+      const url = `https://script.google.com/macros/s/AKfycbx0qYI1krOTEk2QgFD49sTQrPwMYIkWaQK6xe-o7pQPY27BUVo4aNbC_KSi4gneRa6K/exec?item=${encodeURIComponent(
+        item
+      )}&action=${encodeURIComponent(action)}&quantity=${encodeURIComponent(quantity)}`;
 
       fetch(url)
-        .then(response => response.text())
-        .then(data => {
+        .then((response) => response.text())
+        .then((data) => {
           document.getElementById("response").innerText = "✅ Submitted successfully!";
         })
-        .catch(error => {
-          document.getElementById("response").innerText = "❌ Error: " + error;
+        .catch((error) => {
+          document.getElementById("response").innerText = "❌ Error submitting: " + error;
         });
     });
   </script>
