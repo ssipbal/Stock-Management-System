@@ -109,7 +109,7 @@
     <h1>NFC Smart Inventory Management System</h1>
 
     <div id="live-stock">
-      <h3>📊 Current Stock</h3>
+      <h3>Current Stock</h3>
       <ul id="stock-list">
         <li>Loading...</li>
       </ul>
@@ -154,7 +154,7 @@
           }
         })
         .catch(err => {
-          document.getElementById("stock-list").innerHTML = "<li>❌ Failed to load stock.</li>";
+          document.getElementById("stock-list").innerHTML = "<li>Failed to load stock.</li>";
         });
     }
 
@@ -172,11 +172,11 @@
       fetch(url)
         .then((response) => response.text())
         .then((data) => {
-          document.getElementById("response").innerText = "✅ Submitted successfully!";
+          document.getElementById("response").innerText = "Submitted successfully!";
           updateLiveStock(); // Refresh stock after submit
         })
         .catch((error) => {
-          document.getElementById("response").innerText = "❌ Error submitting: " + error;
+          document.getElementById("response").innerText = "Error submitting: " + error;
         });
     });
   </script>
