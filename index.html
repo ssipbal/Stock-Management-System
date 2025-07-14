@@ -3,188 +3,197 @@
 <head>
   <meta charset="UTF-8" />
   <title>NFC Smart Inventory Management System</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    * {
-      box-sizing: border-box;
-    }
-
-    body {
-      margin: 0;
-      font-family: 'Sarabun', sans-serif;
-      background: #eef3f7;
-      color: #333;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
-    }
-
-    .container {
-      background: white;
-      border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      max-width: 420px;
-      width: 100%;
-      padding: 30px;
-      text-align: center;
-    }
-
-    h1 {
-      font-size: 24px;
-      margin-bottom: 20px;
-      color: #2c3e50;
-    }
-
-    label {
-      display: block;
-      text-align: left;
-      margin-top: 15px;
-      margin-bottom: 5px;
-      font-weight: 600;
-      font-size: 14px;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      margin-bottom: 10px;
-      font-family: 'Sarabun', sans-serif;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      background-color: #007acc;
-      color: white;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background-color 0.3s ease;
-    }
-
-    button:hover {
-      background-color: #005fa3;
-    }
-
-    #response {
-      margin-top: 15px;
-      font-size: 14px;
-      font-weight: 500;
-      color: green;
-    }
-
-    #stock-list {
-      padding-left: 0;
-      list-style: none;
-      text-align: left;
-      font-size: 15px;
-      margin-bottom: 20px;
-    }
-
-    #stock-list li {
-      margin-bottom: 4px;
-    }
-
-    @media (max-width: 500px) {
-      .container {
-        padding: 20px;
-      }
-
-      h1 {
-        font-size: 20px;
-      }
-    }
+    /* Your styles here (same as your style above) */
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .hidden { display: none; }
+    #container { max-width: 420px; margin: auto; background: #fff; padding: 20px; border-radius: 12px; box-shadow: 0 0 10px #ccc; }
+    button { margin: 5px; padding: 10px; }
+    #summary-list { list-style: none; padding-left: 0; }
   </style>
 </head>
 <body>
-  <div class="container">
+  <div id="container">
     <h1>NFC Smart Inventory Management System</h1>
-
-    <div id="live-stock">
-      <h3>Current Stock</h3>
-      <ul id="stock-list">
-        <li>Loading...</li>
-      </ul>
+    
+    <div>
+      <button id="btnAdmin">Admin View</button>
+      <button id="btnCustomer">Customer View</button>
     </div>
 
-    <form id="stockForm">
-      <label for="item">Item</label>
-      <select id="item" name="item" required>
-        <option value="Cookie">Cookie</option>
-        <option value="Brownie">Brownie</option>
-        <option value="Macaron">Macaron</option>
-      </select>
+    <!-- Admin full view -->
+    <div id="adminView" class="">
+      <h3>Admin Stock Management</h3>
+      <!-- Put your full admin form here -->
+      <form id="adminForm">
+        <label for="adminItem">Item</label>
+        <select id="adminItem" required>
+          <option>Cookie</option>
+          <option>Brownie</option>
+          <option>Macaron</option>
+        </select>
+        <label for="adminQuantity">Quantity</label>
+        <input id="adminQuantity" type="number" min="1" required />
+        <label for="adminAction">Action</label>
+        <select id="adminAction" required>
+          <option>Add</option>
+          <option>Remove</option>
+        </select>
+        <button type="submit">Submit</button>
+      </form>
+      <p id="adminResponse"></p>
+    </div>
 
-      <label for="quantity">Quantity</label>
-      <input type="number" id="quantity" name="quantity" min="1" required />
+    <!-- Customer minimal view -->
+    <div id="customerView" class="hidden">
+      <h3>Customer Purchase</h3>
+      <form id="customerForm">
+        <label for="custItem">Item</label>
+        <select id="custItem" required>
+          <option>Cookie</option>
+          <option>Brownie</option>
+          <option>Macaron</option>
+        </select>
+        <label for="custQuantity">Quantity</label>
+        <input id="custQuantity" type="number" min="1" required />
+        <button type="button" id="addToCart">Add to Summary</button>
+      </form>
 
-      <label for="action">Action</label>
-      <select id="action" name="action" required>
-        <option value="Add">Add</option>
-        <option value="Remove">Remove</option>
-      </select>
+      <h4>Summary (Receipt)</h4>
+      <ul id="summary-list"></ul>
+      <button id="confirmPurchase" disabled>Confirm Purchase</button>
+      <p id="customerResponse"></p>
+    </div>
 
-      <button type="submit">Submit</button>
-    </form>
-
-    <p id="response"></p>
+    <h3>Current Stock</h3>
+    <ul id="stock-list"><li>Loading...</li></ul>
   </div>
 
   <script>
-    // ✅ Use your latest deployed Apps Script web app URL
-    const stockURL = 'https://script.google.com/macros/s/AKfycbw7611c6rBZ1qzOA5-FJEBJsQ0_DTgoWnq7Vrx9SPiyxBvOhZAZtoQkCFi89ZjNp8ne/exec';
+    const stockURL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
 
-    // Load live stock
-    function updateLiveStock() {
-      fetch(stockURL)
-        .then(response => response.json())
-        .then(data => {
-          const list = document.getElementById("stock-list");
-          list.innerHTML = '';
+    // Elements
+    const btnAdmin = document.getElementById('btnAdmin');
+    const btnCustomer = document.getElementById('btnCustomer');
+    const adminView = document.getElementById('adminView');
+    const customerView = document.getElementById('customerView');
+    const stockList = document.getElementById('stock-list');
+    const summaryList = document.getElementById('summary-list');
+    const confirmPurchaseBtn = document.getElementById('confirmPurchase');
+    const customerResponse = document.getElementById('customerResponse');
+    const adminResponse = document.getElementById('adminResponse');
 
-          const stock = data.stock;
-          for (const item in stock) {
-            const li = document.createElement("li");
-            li.textContent = `${item}: ${stock[item]}`;
-            list.appendChild(li);
-          }
-        })
-        .catch(err => {
-          document.getElementById("stock-list").innerHTML = "<li>Failed to load stock.</li>";
-          console.error(err);
-        });
+    // Switch views
+    btnAdmin.onclick = () => {
+      adminView.classList.remove('hidden');
+      customerView.classList.add('hidden');
+      adminResponse.innerText = '';
+      customerResponse.innerText = '';
+      clearSummary();
+    };
+
+    btnCustomer.onclick = () => {
+      adminView.classList.add('hidden');
+      customerView.classList.remove('hidden');
+      adminResponse.innerText = '';
+      customerResponse.innerText = '';
+      clearSummary();
+    };
+
+    // Load stock from server and show
+    async function updateLiveStock() {
+      try {
+        const res = await fetch(stockURL);
+        const data = await res.json();
+        stockList.innerHTML = '';
+        for (const item in data.stock) {
+          const li = document.createElement('li');
+          li.textContent = `${item}: ${data.stock[item]}`;
+          stockList.appendChild(li);
+        }
+      } catch {
+        stockList.innerHTML = '<li>Failed to load stock.</li>';
+      }
     }
 
     updateLiveStock();
 
-    // Handle form submission
-    document.getElementById("stockForm").addEventListener("submit", function (e) {
+    // Admin form submit handler
+    document.getElementById('adminForm').addEventListener('submit', async e => {
       e.preventDefault();
+      const item = document.getElementById('adminItem').value;
+      const quantity = document.getElementById('adminQuantity').value;
+      const action = document.getElementById('adminAction').value;
 
-      const item = document.getElementById("item").value;
-      const quantity = document.getElementById("quantity").value;
-      const action = document.getElementById("action").value;
+      try {
+        const res = await fetch(`${stockURL}?item=${encodeURIComponent(item)}&action=${encodeURIComponent(action)}&quantity=${encodeURIComponent(quantity)}`);
+        const data = await res.json();
+        adminResponse.innerText = '✅ Updated successfully!';
+        updateLiveStock();
+      } catch (err) {
+        adminResponse.innerText = '❌ Update failed: ' + err.message;
+      }
+    });
 
-      const url = `${stockURL}?item=${encodeURIComponent(item)}&action=${encodeURIComponent(action)}&quantity=${encodeURIComponent(quantity)}`;
+    // Customer "cart"
+    const cart = {};
 
-      fetch(url)
-        .then(response => response.json())
-        .then(data => {
-          document.getElementById("response").innerText = data.message || "✅ Submitted!";
-          updateLiveStock(); // Refresh stock after submit
-        })
-        .catch((error) => {
-          document.getElementById("response").innerText = "❌ Error submitting: " + error;
-          console.error(error);
-        });
+    // Add to summary
+    document.getElementById('addToCart').addEventListener('click', () => {
+      const item = document.getElementById('custItem').value;
+      const quantity = parseInt(document.getElementById('custQuantity').value);
+
+      if (!quantity || quantity < 1) {
+        alert('Please enter a valid quantity');
+        return;
+      }
+
+      if (cart[item]) {
+        cart[item] += quantity;
+      } else {
+        cart[item] = quantity;
+      }
+
+      renderSummary();
+    });
+
+    function renderSummary() {
+      summaryList.innerHTML = '';
+      for (const item in cart) {
+        const li = document.createElement('li');
+        li.textContent = `${item}: ${cart[item]}`;
+        summaryList.appendChild(li);
+      }
+      confirmPurchaseBtn.disabled = Object.keys(cart).length === 0;
+    }
+
+    function clearSummary() {
+      for (const key in cart) delete cart[key];
+      renderSummary();
+      confirmPurchaseBtn.disabled = true;
+    }
+
+    // Confirm purchase - deduct from stock
+    confirmPurchaseBtn.addEventListener('click', async () => {
+      if (Object.keys(cart).length === 0) return;
+
+      // Send all cart items as separate calls or batch?  
+      // Let's do batch for each item with action Remove (deduct stock)
+      try {
+        for (const item in cart) {
+          const quantity = cart[item];
+          const url = `${stockURL}?item=${encodeURIComponent(item)}&action=Remove&quantity=${encodeURIComponent(quantity)}`;
+          const res = await fetch(url);
+          if (!res.ok) throw new Error('Network response was not ok');
+          // optionally check response json here
+        }
+        customerResponse.innerText = '✅ Purchase confirmed!';
+        clearSummary();
+        updateLiveStock();
+      } catch (err) {
+        customerResponse.innerText = '❌ Purchase failed: ' + err.message;
+      }
     });
   </script>
 </body>
