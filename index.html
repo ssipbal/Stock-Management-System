@@ -57,7 +57,7 @@
   ul li {
     margin-bottom: 0.5rem;
   }
-  #stock-list {
+  #stock-list, #order-history-list {
     max-height: 200px;
     overflow-y: auto;
     border: 1px solid #ddd;
@@ -113,9 +113,22 @@
 
 <div class="container hidden" id="admin-panel">
   <h2>Admin Panel</h2>
-  <h3>Current Stock</h3>
-  <ul id="stock-list"><li>Loading...</li></ul>
-  <button id="admin-back">Back to Main</button>
+  <div style="display:flex; gap:10px; justify-content:center; margin-bottom:1rem;">
+    <button id="stock-tab-btn" style="flex:1;">Live Stock</button>
+    <button id="order-history-tab-btn" style="flex:1;">Order History</button>
+  </div>
+  
+  <div id="stock-tab">
+    <h3>Current Stock</h3>
+    <ul id="stock-list"><li>Loading...</li></ul>
+    <button id="admin-back">Back to Main</button>
+  </div>
+  
+  <div id="order-history-tab" class="hidden">
+    <h3>Order History</h3>
+    <ul id="order-history-list"><li>Loading...</li></ul>
+    <button id="order-history-back">Back to Main</button>
+  </div>
 </div>
 
 <div class="container hidden" id="customer-panel">
@@ -144,14 +157,13 @@
 
 <script>
   const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxMhdQs59nCZ6mF58m_MBDow0fATHlVeYM2KSHb09Yzok4t2O-6PE9pqBFRbcyuE6YG/exec';
-  
+
   const PRICES = {
     Cookie: 15,
     Brownie: 20,
     Macaron: 35
   };
 
-  // Elements
   const mainMenu = document.getElementById('main-menu');
   const adminBtn = document.getElementById('admin-btn');
   const customerBtn = document.getElementById('customer-btn');
@@ -163,8 +175,14 @@
   const adminLoginResponse = document.getElementById('admin-login-response');
 
   const adminPanel = document.getElementById('admin-panel');
+  const stockTabBtn = document.getElementById('stock-tab-btn');
+  const orderHistoryTabBtn = document.getElementById('order-history-tab-btn');
+  const stockTab = document.getElementById('stock-tab');
+  const orderHistoryTab = document.getElementById('order-history-tab');
   const stockList = document.getElementById('stock-list');
+  const orderHistoryList = document.getElementById('order-history-list');
   const adminBack = document.getElementById('admin-back');
+  const orderHistoryBack = document.getElementById('order-history-back');
 
   const customerPanel = document.getElementById('customer-panel');
   const orderForm = document.getElementById('order-form');
@@ -181,45 +199,65 @@
   function show(...els) { els.forEach(e => e.classList.remove('hidden')); }
   function hide(...els) { els.forEach(e => e.classList.add('hidden')); }
 
+  // Main menu buttons
   adminBtn.onclick = () => {
     hide(mainMenu);
     show(adminLogin);
     adminPassword.value = '';
     adminLoginResponse.textContent = '';
   };
-
   customerBtn.onclick = () => {
     hide(mainMenu);
     show(customerPanel);
     clearCustomerForm();
   };
 
+  // Admin login
   adminLoginBack.onclick = () => {
     hide(adminLogin);
     show(mainMenu);
   };
-
   adminLoginBtn.onclick = () => {
     if (adminPassword.value === '12345') {
       hide(adminLogin);
       show(adminPanel);
-      loadStock();
+      showStockTab();
     } else {
       adminLoginResponse.textContent = 'Incorrect password!';
     }
   };
 
+  // Admin panel navigation
   adminBack.onclick = () => {
     hide(adminPanel);
     show(mainMenu);
   };
+  orderHistoryBack.onclick = adminBack.onclick;
 
+  stockTabBtn.onclick = () => showStockTab();
+  orderHistoryTabBtn.onclick = () => showOrderHistoryTab();
+
+  // Show stock tab
+  function showStockTab() {
+    show(stockTab);
+    hide(orderHistoryTab);
+    loadStock();
+  }
+
+  // Show order history tab
+  function showOrderHistoryTab() {
+    show(orderHistoryTab);
+    hide(stockTab);
+    loadOrderHistory();
+  }
+
+  // Load current stock
   function loadStock() {
     stockList.innerHTML = '<li>Loading...</li>';
     fetch(SCRIPT_URL)
       .then(r => r.json())
       .then(data => {
-        if(data.status === 'success') {
+        if (data.status === 'success') {
           stockList.innerHTML = '';
           for (const [item, qty] of Object.entries(data.stock)) {
             const li = document.createElement('li');
@@ -230,14 +268,52 @@
           stockList.innerHTML = '<li>Error loading stock.</li>';
         }
       })
-      .catch(() => stockList.innerHTML = '<li>Error loading stock.</li>');
+      .catch(() => {
+        stockList.innerHTML = '<li>Error loading stock.</li>';
+      });
   }
 
+  // Load order history from backend
+  function loadOrderHistory() {
+    orderHistoryList.innerHTML = '<li>Loading...</li>';
+    fetch(SCRIPT_URL + '?history=true')
+      .then(r => r.json())
+      .then(data => {
+        if (data.status === 'success') {
+          orderHistoryList.innerHTML = '';
+          if (data.orders.length === 0) {
+            orderHistoryList.innerHTML = '<li>No orders found.</li>';
+            return;
+          }
+          data.orders.forEach(order => {
+            const li = document.createElement('li');
+            const timeStr = new Date(order.timestamp).toLocaleString();
+            let itemsText = order.items.map(i => `${i.item} x${i.quantity} (${i.price * i.quantity} THB)`).join(', ');
+            li.textContent = `${timeStr} - ${itemsText} | Total: ${order.totalPrice} THB`;
+            orderHistoryList.appendChild(li);
+          });
+        } else {
+          orderHistoryList.innerHTML = '<li>Error loading order history.</li>';
+        }
+      })
+      .catch(() => {
+        orderHistoryList.innerHTML = '<li>Error loading order history.</li>';
+      });
+  }
+
+  // Customer panel back button
+  customerBack.onclick = () => {
+    hide(customerPanel);
+    show(mainMenu);
+    clearCustomerForm();
+  };
+
+  // Customer form submit
   orderForm.onsubmit = e => {
     e.preventDefault();
     const item = itemSelect.value;
     const quantity = Number(quantityInput.value);
-    if(quantity <= 0) return;
+    if (quantity <= 0) return;
 
     currentOrders.push({
       item,
@@ -250,6 +326,7 @@
     customerResponse.textContent = '';
   };
 
+  // Render customer order summary
   function renderOrderSummary() {
     orderSummaryList.innerHTML = '';
     let total = 0;
@@ -266,21 +343,22 @@
     totalPriceDiv.textContent = `Total: ${total} THB`;
   }
 
+  // Delete item from customer order summary
   orderSummaryList.onclick = e => {
-    if(e.target.tagName === 'BUTTON') {
+    if (e.target.tagName === 'BUTTON') {
       const idx = Number(e.target.dataset.index);
       if (!isNaN(idx)) {
         currentOrders.splice(idx, 1);
         renderOrderSummary();
-        if(currentOrders.length === 0) confirmOrderBtn.disabled = true;
+        if (currentOrders.length === 0) confirmOrderBtn.disabled = true;
       }
     }
   };
 
+  // Confirm order button sends order to backend
   confirmOrderBtn.onclick = () => {
-    if(currentOrders.length === 0) return;
+    if (currentOrders.length === 0) return;
 
-    // Prepare order object
     const orderObj = {
       items: currentOrders,
       totalPrice: currentOrders.reduce((sum, o) => sum + o.price * o.quantity, 0)
@@ -289,7 +367,7 @@
     fetch(`${SCRIPT_URL}?confirmOrder=true&order=${encodeURIComponent(JSON.stringify(orderObj))}`)
       .then(r => r.json())
       .then(data => {
-        if(data.status === 'success') {
+        if (data.status === 'success') {
           customerResponse.style.color = 'green';
           customerResponse.textContent = '✅ Order confirmed successfully!';
           currentOrders = [];
