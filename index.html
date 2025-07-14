@@ -1,99 +1,156 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>NFC Smart Inventory Management System</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet" />
-<style>
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; font-family: 'Sarabun', sans-serif;
-    background: #eef3f7; color: #333;
-    display: flex; align-items: center; justify-content: center;
-    min-height: 100vh; padding: 20px;
-  }
-  .container {
-    background: white; border-radius: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-    max-width: 480px; width: 100%; padding: 30px; text-align: center;
-  }
-  h1 { font-size: 24px; margin-bottom: 20px; color: #2c3e50; }
-  label {
-    display: block; text-align: left; margin-top: 15px; margin-bottom: 5px;
-    font-weight: 600; font-size: 14px;
-  }
-  input, select {
-    width: 100%; padding: 10px; font-size: 16px; border: 1px solid #ccc;
-    border-radius: 8px; margin-bottom: 10px; font-family: 'Sarabun', sans-serif;
-  }
-  button {
-    width: 100%; padding: 12px; font-size: 16px; background-color: #007acc;
-    color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: 600;
-    transition: background-color 0.3s ease;
-  }
-  button:hover { background-color: #005fa3; }
-  #response {
-    margin-top: 15px; font-size: 14px; font-weight: 500; color: green;
-  }
-  #stock-list {
-    padding-left: 0; list-style: none; text-align: left; font-size: 15px; margin-bottom: 20px;
-  }
-  #stock-list li { margin-bottom: 4px; }
-  table {
-    width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px;
-  }
-  th, td {
-    border: 1px solid #ddd; padding: 8px; text-align: left;
-  }
-  th {
-    background-color: #007acc; color: white;
-  }
-  .hidden { display: none; }
-  #totalAmount { font-size: 20px; font-weight: 700; margin-top: 10px; text-align: right; }
-  .back-button {
-    margin-top: 20px;
-    background-color: #555;
-    font-size: 14px;
-  }
-  .back-button:hover {
-    background-color: #333;
-  }
-  #orderHistoryTable th, #orderHistoryTable td {
-    font-size: 13px;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <title>NFC Smart Inventory Management System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Sarabun', sans-serif;
+      background: #eef3f7;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      max-width: 480px;
+      width: 100%;
+      padding: 30px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 24px;
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+    label {
+      display: block;
+      text-align: left;
+      margin-top: 15px;
+      margin-bottom: 5px;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      margin-bottom: 10px;
+      font-family: 'Sarabun', sans-serif;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      background-color: #007acc;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background-color 0.3s ease;
+      margin-top: 10px;
+    }
+    button:hover {
+      background-color: #005fa3;
+    }
+    #response {
+      margin-top: 15px;
+      font-size: 14px;
+      font-weight: 500;
+      color: green;
+    }
+    #stock-list {
+      padding-left: 0;
+      list-style: none;
+      text-align: left;
+      font-size: 15px;
+      margin-bottom: 20px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    #stock-list li {
+      margin-bottom: 4px;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    table, th, td {
+      border: 1px solid #ccc;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+    }
+    .hidden {
+      display: none;
+    }
+    .big-total {
+      font-weight: 700;
+      font-size: 22px;
+      margin-top: 20px;
+      text-align: right;
+    }
+    .small-button {
+      width: auto;
+      padding: 6px 10px;
+      font-size: 13px;
+      background-color: #cc0000;
+      margin-left: 5px;
+      border-radius: 5px;
+    }
+    @media (max-width: 500px) {
+      .container {
+        padding: 20px;
+      }
+      h1 {
+        font-size: 20px;
+      }
+    }
+  </style>
 </head>
 <body>
-
-<div class="container">
-
-  <!-- Role Selection -->
-  <div id="roleSelect">
-    <h1>Welcome</h1>
-    <button id="btnAdmin">Admin</button>
+  <div class="container" id="mainMenu">
+    <h1>NFC Smart Inventory Management System</h1>
     <button id="btnCustomer">Customer</button>
+    <button id="btnAdmin">Admin</button>
   </div>
 
-  <!-- Admin Password -->
-  <div id="adminLogin" class="hidden">
+  <!-- Admin Login -->
+  <div class="container hidden" id="adminLogin">
     <h1>Admin Login</h1>
-    <label for="adminPass">Enter Password</label>
-    <input type="password" id="adminPass" />
-    <button id="adminLoginBtn">Login</button>
-    <p id="adminLoginResp" style="color:red;"></p>
-    <button class="back-button" id="backFromAdminLogin">Back</button>
+    <label for="adminPassword">Enter Password:</label>
+    <input type="password" id="adminPassword" />
+    <button id="adminLoginSubmit">Login</button>
+    <button id="adminLoginBack">Back</button>
+    <p id="adminLoginResponse" style="color:red;"></p>
   </div>
 
   <!-- Admin Dashboard -->
-  <div id="adminDashboard" class="hidden">
+  <div class="container hidden" id="adminDashboard">
     <h1>Admin Dashboard</h1>
     <button id="showStockBtn">View Live Stock</button>
     <button id="showOrderHistoryBtn">View Order History</button>
-    <button class="back-button" id="adminLogoutBtn">Logout</button>
+    <button id="adminLogoutBtn">Logout</button>
 
     <div id="liveStockSection" class="hidden">
       <h3>Current Stock</h3>
       <ul id="stock-list"><li>Loading...</li></ul>
+      <button id="backToMenuFromStock">Back to Menu</button>
     </div>
 
     <div id="orderHistorySection" class="hidden">
@@ -104,25 +161,27 @@
         </thead>
         <tbody></tbody>
       </table>
+      <button id="backToMenuFromHistory">Back to Menu</button>
     </div>
   </div>
 
-  <!-- Customer Order -->
-  <div id="customerSection" class="hidden">
+  <!-- Customer Page -->
+  <div class="container hidden" id="customerPage">
     <h1>Customer Order</h1>
-    <form id="orderForm">
+
+    <form id="customerForm">
       <label for="item">Item</label>
-      <select id="item" required>
+      <select id="item" name="item" required>
         <option value="Cookie">Cookie</option>
         <option value="Brownie">Brownie</option>
         <option value="Macaron">Macaron</option>
       </select>
 
       <label for="quantity">Quantity</label>
-      <input type="number" id="quantity" min="1" value="1" required />
+      <input type="number" id="quantity" name="quantity" min="1" required />
 
       <label for="action">Action</label>
-      <select id="action" disabled>
+      <select id="action" name="action" required>
         <option value="Add">Add</option>
       </select>
 
@@ -130,301 +189,305 @@
     </form>
 
     <h3>Order Summary</h3>
-    <table id="summaryTable" style="width:100%; margin-top:10px;">
+    <table id="orderSummaryTable">
       <thead>
-        <tr><th>Item</th><th>Qty</th><th>Price (THB)</th><th>Action</th></tr>
+        <tr><th>Item</th><th>Quantity</th><th>Price (THB)</th><th>Action</th></tr>
       </thead>
       <tbody></tbody>
     </table>
 
-    <div id="totalAmount">Total: 0 THB</div>
+    <div class="big-total" id="totalPriceDisplay">Total: 0 THB</div>
 
     <button id="confirmOrderBtn">Confirm Order</button>
-    <button class="back-button" id="backFromCustomerBtn">Back</button>
-    <p id="customerResp" style="color:green;"></p>
+    <button id="backToMenuFromCustomer">Back to Main Menu</button>
+
+    <p id="customerResponse"></p>
   </div>
 
-</div>
+  <script>
+    const stockURL = 'https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_ID/exec'; // <-- Replace with your actual Apps Script URL
 
-<script>
-  const stockURL = 'https://script.google.com/macros/s/YOUR_DEPLOYED_SCRIPT_ID/exec'; // replace with your Apps Script URL
+    // Pricing per item
+    const prices = {
+      "Cookie": 15,
+      "Brownie": 20,
+      "Macaron": 35
+    };
 
-  // Pricing for items
-  const prices = {
-    'Cookie': 15,
-    'Brownie': 20,
-    'Macaron': 35
-  };
+    // Cached DOM elements
+    const mainMenu = document.getElementById('mainMenu');
+    const btnCustomer = document.getElementById('btnCustomer');
+    const btnAdmin = document.getElementById('btnAdmin');
 
-  // Cached stock data
-  let currentStock = {};
+    // Admin login
+    const adminLogin = document.getElementById('adminLogin');
+    const adminPassword = document.getElementById('adminPassword');
+    const adminLoginSubmit = document.getElementById('adminLoginSubmit');
+    const adminLoginBack = document.getElementById('adminLoginBack');
+    const adminLoginResponse = document.getElementById('adminLoginResponse');
 
-  // Cached customer order summary
-  let customerOrders = [];
+    // Admin dashboard
+    const adminDashboard = document.getElementById('adminDashboard');
+    const showStockBtn = document.getElementById('showStockBtn');
+    const showOrderHistoryBtn = document.getElementById('showOrderHistoryBtn');
+    const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+    const liveStockSection = document.getElementById('liveStockSection');
+    const stockList = document.getElementById('stock-list');
+    const backToMenuFromStock = document.getElementById('backToMenuFromStock');
+    const orderHistorySection = document.getElementById('orderHistorySection');
+    const orderHistoryTableBody = document.querySelector('#orderHistoryTable tbody');
+    const backToMenuFromHistory = document.getElementById('backToMenuFromHistory');
 
-  // === Initial Setup ===
-  const roleSelect = document.getElementById('roleSelect');
-  const adminLogin = document.getElementById('adminLogin');
-  const adminDashboard = document.getElementById('adminDashboard');
-  const customerSection = document.getElementById('customerSection');
+    // Customer page
+    const customerPage = document.getElementById('customerPage');
+    const customerForm = document.getElementById('customerForm');
+    const orderSummaryTableBody = document.querySelector('#orderSummaryTable tbody');
+    const totalPriceDisplay = document.getElementById('totalPriceDisplay');
+    const confirmOrderBtn = document.getElementById('confirmOrderBtn');
+    const backToMenuFromCustomer = document.getElementById('backToMenuFromCustomer');
+    const customerResponse = document.getElementById('customerResponse');
 
-  // Admin login
-  const adminPassInput = document.getElementById('adminPass');
-  const adminLoginBtn = document.getElementById('adminLoginBtn');
-  const adminLoginResp = document.getElementById('adminLoginResp');
+    // Current order summary (array of objects)
+    let orderSummary = [];
 
-  // Admin dashboard buttons and sections
-  const showStockBtn = document.getElementById('showStockBtn');
-  const showOrderHistoryBtn = document.getElementById('showOrderHistoryBtn');
-  const adminLogoutBtn = document.getElementById('adminLogoutBtn');
+    // --- Navigation functions ---
 
-  const liveStockSection = document.getElementById('liveStockSection');
-  const stockList = document.getElementById('stock-list');
-
-  const orderHistorySection = document.getElementById('orderHistorySection');
-  const orderHistoryTableBody = document.querySelector('#orderHistoryTable tbody');
-
-  // Customer form and UI
-  const orderForm = document.getElementById('orderForm');
-  const itemSelect = document.getElementById('item');
-  const quantityInput = document.getElementById('quantity');
-  const summaryTableBody = document.querySelector('#summaryTable tbody');
-  const totalAmountDiv = document.getElementById('totalAmount');
-  const confirmOrderBtn = document.getElementById('confirmOrderBtn');
-  const customerResp = document.getElementById('customerResp');
-
-  // Back buttons
-  const backFromAdminLogin = document.getElementById('backFromAdminLogin');
-  const backFromCustomerBtn = document.getElementById('backFromCustomerBtn');
-
-  // --- Role selection ---
-  document.getElementById('btnAdmin').onclick = () => {
-    roleSelect.classList.add('hidden');
-    adminLogin.classList.remove('hidden');
-    adminPassInput.value = '';
-    adminLoginResp.textContent = '';
-  };
-
-  document.getElementById('btnCustomer').onclick = () => {
-    roleSelect.classList.add('hidden');
-    customerSection.classList.remove('hidden');
-    customerResp.textContent = '';
-    resetCustomerOrder();
-  };
-
-  backFromAdminLogin.onclick = () => {
-    adminLogin.classList.add('hidden');
-    roleSelect.classList.remove('hidden');
-  };
-
-  backFromCustomerBtn.onclick = () => {
-    customerSection.classList.add('hidden');
-    roleSelect.classList.remove('hidden');
-  };
-
-  // --- Admin login ---
-  adminLoginBtn.onclick = () => {
-    if (adminPassInput.value === '12345') {
-      adminLogin.classList.add('hidden');
-      adminDashboard.classList.remove('hidden');
-      adminLoginResp.textContent = '';
-      showLiveStock();
-      hideOrderHistory();
-    } else {
-      adminLoginResp.textContent = 'Incorrect password.';
+    function showElement(el) {
+      el.classList.remove('hidden');
     }
-  };
-
-  // --- Admin dashboard buttons ---
-  showStockBtn.onclick = () => {
-    showLiveStock();
-    hideOrderHistory();
-  };
-
-  showOrderHistoryBtn.onclick = () => {
-    hideLiveStock();
-    showOrderHistory();
-  };
-
-  adminLogoutBtn.onclick = () => {
-    adminDashboard.classList.add('hidden');
-    roleSelect.classList.remove('hidden');
-  };
-
-  // --- Functions to show/hide stock and order history ---
-  function showLiveStock() {
-    liveStockSection.classList.remove('hidden');
-  }
-  function hideLiveStock() {
-    liveStockSection.classList.add('hidden');
-  }
-  function showOrderHistory() {
-    orderHistorySection.classList.remove('hidden');
-    loadOrderHistory();
-  }
-  function hideOrderHistory() {
-    orderHistorySection.classList.add('hidden');
-  }
-
-  // --- Load live stock from backend ---
-  async function loadLiveStock() {
-    try {
-      const res = await fetch(stockURL);
-      if (!res.ok) throw new Error('Failed to load stock');
-      const data = await res.json();
-      currentStock = data.stock || data; // accommodate response format
-
-      stockList.innerHTML = '';
-      for (const [item, qty] of Object.entries(currentStock)) {
-        const li = document.createElement('li');
-        li.textContent = `${item}: ${qty}`;
-        stockList.appendChild(li);
-      }
-    } catch (err) {
-      stockList.innerHTML = '<li>Failed to load stock.</li>';
-      console.error(err);
+    function hideElement(el) {
+      el.classList.add('hidden');
     }
-  }
-
-  // Auto-refresh live stock every 10 seconds if admin dashboard live stock visible
-  setInterval(() => {
-    if (!liveStockSection.classList.contains('hidden')) {
+    function showMainMenu() {
+      hideElement(adminLogin);
+      hideElement(adminDashboard);
+      hideElement(customerPage);
+      showElement(mainMenu);
+      adminPassword.value = '';
+      adminLoginResponse.textContent = '';
+      orderSummary = [];
+      clearOrderSummaryTable();
+      customerResponse.textContent = '';
+    }
+    function showAdminLogin() {
+      hideElement(mainMenu);
+      showElement(adminLogin);
+      adminPassword.value = '';
+      adminLoginResponse.textContent = '';
+    }
+    function showAdminDashboard() {
+      hideElement(adminLogin);
+      hideElement(mainMenu);
+      hideElement(customerPage);
+      showElement(adminDashboard);
+      hideElement(liveStockSection);
+      hideElement(orderHistorySection);
       loadLiveStock();
     }
-  }, 10000);
+    function showCustomerPage() {
+      hideElement(mainMenu);
+      hideElement(adminDashboard);
+      hideElement(adminLogin);
+      showElement(customerPage);
+      orderSummary = [];
+      clearOrderSummaryTable();
+      updateTotalPrice();
+      customerResponse.textContent = '';
+    }
 
-  // Load immediately on admin dashboard show
-  function showLiveStock() {
-    liveStockSection.classList.remove('hidden');
-    loadLiveStock();
-  }
-  
-  // --- Load order history ---
-  async function loadOrderHistory() {
-    try {
-      const res = await fetch(stockURL + '?history=true');
-      if (!res.ok) throw new Error('Failed to load order history');
-      const orders = await res.json();
+    // --- Admin Login ---
+    btnAdmin.addEventListener('click', showAdminLogin);
+    adminLoginBack.addEventListener('click', showMainMenu);
 
-      orderHistoryTableBody.innerHTML = '';
-      if (orders.length === 0) {
-        orderHistoryTableBody.innerHTML = '<tr><td colspan="4">No orders found.</td></tr>';
-        return;
+    adminLoginSubmit.addEventListener('click', () => {
+      const pass = adminPassword.value;
+      if (pass === '12345') {
+        showAdminDashboard();
+      } else {
+        adminLoginResponse.textContent = 'Incorrect password.';
       }
-      orders.forEach(order => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${new Date(order.timestamp).toLocaleString()}</td>
-          <td>${order.items}</td>
-          <td>${order.quantities}</td>
-          <td>${order.totalPrice}</td>
-        `;
-        orderHistoryTableBody.appendChild(row);
-      });
-    } catch (err) {
-      orderHistoryTableBody.innerHTML = '<tr><td colspan="4">Failed to load order history.</td></tr>';
-      console.error(err);
-    }
-  }
-
-  // --- Customer order form handling ---
-  orderForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const item = itemSelect.value;
-    const quantity = Number(quantityInput.value);
-    if (quantity < 1) return alert('Quantity must be at least 1.');
-
-    addToSummary(item, quantity);
-    orderForm.reset();
-    quantityInput.value = 1;
-  });
-
-  // Add item and qty to customer order summary
-  function addToSummary(item, qty) {
-    // If already exists, add qty
-    const existing = customerOrders.find(o => o.item === item);
-    if (existing) {
-      existing.quantity += qty;
-    } else {
-      customerOrders.push({ item, quantity: qty, price: prices[item] });
-    }
-    renderSummary();
-  }
-
-  // Render customer order summary table and total
-  function renderSummary() {
-    summaryTableBody.innerHTML = '';
-    let total = 0;
-
-    customerOrders.forEach((order, i) => {
-      const row = document.createElement('tr');
-      const orderTotal = order.quantity * order.price;
-      total += orderTotal;
-
-      row.innerHTML = `
-        <td>${order.item}</td>
-        <td>${order.quantity}</td>
-        <td>${orderTotal} THB</td>
-        <td><button data-index="${i}" class="deleteBtn">Delete</button></td>
-      `;
-      summaryTableBody.appendChild(row);
     });
 
-    totalAmountDiv.textContent = `Total: ${total} THB`;
-  }
+    // --- Admin Dashboard ---
+    showStockBtn.addEventListener('click', () => {
+      showElement(liveStockSection);
+      hideElement(orderHistorySection);
+      loadLiveStock();
+    });
 
-  // Delete order from summary on delete button click
-  summaryTableBody.addEventListener('click', e => {
-    if (e.target.classList.contains('deleteBtn')) {
-      const idx = Number(e.target.getAttribute('data-index'));
-      if (!isNaN(idx)) {
-        customerOrders.splice(idx, 1);
-        renderSummary();
+    backToMenuFromStock.addEventListener('click', () => {
+      hideElement(liveStockSection);
+    });
+
+    showOrderHistoryBtn.addEventListener('click', () => {
+      hideElement(liveStockSection);
+      showElement(orderHistorySection);
+      loadOrderHistory();
+    });
+
+    backToMenuFromHistory.addEventListener('click', () => {
+      hideElement(orderHistorySection);
+    });
+
+    adminLogoutBtn.addEventListener('click', showMainMenu);
+
+    // --- Live Stock for Admin ---
+    async function loadLiveStock() {
+      stockList.innerHTML = '<li>Loading...</li>';
+      try {
+        const res = await fetch(stockURL);
+        if (!res.ok) throw new Error('Failed to fetch stock');
+        const data = await res.json();
+        stockList.innerHTML = '';
+        for (const key in data.stock) {
+          const li = document.createElement('li');
+          li.textContent = `${key}: ${data.stock[key]}`;
+          stockList.appendChild(li);
+        }
+      } catch (err) {
+        stockList.innerHTML = '<li>Failed to load stock.</li>';
+        console.error(err);
       }
     }
-  });
 
-  // Confirm order: send order to backend (doPost) and deduct stock
-  confirmOrderBtn.onclick = async () => {
-    if (customerOrders.length === 0) {
-      alert('Please add items to your order first.');
-      return;
+    // --- Load Order History ---
+    async function loadOrderHistory() {
+      orderHistoryTableBody.innerHTML = '<tr><td colspan="4">Loading...</td></tr>';
+      try {
+        const res = await fetch(stockURL + '?history=true');
+        if (!res.ok) throw new Error('Failed to fetch order history');
+        const orders = await res.json();
+        orderHistoryTableBody.innerHTML = '';
+        if (!orders.length) {
+          orderHistoryTableBody.innerHTML = '<tr><td colspan="4">No orders found.</td></tr>';
+          return;
+        }
+        orders.forEach(order => {
+          const row = document.createElement('tr');
+          row.innerHTML = `
+            <td>${new Date(order.timestamp).toLocaleString()}</td>
+            <td>${order.items.join(', ')}</td>
+            <td>${order.quantities.join(', ')}</td>
+            <td>${order.totalPrice}</td>
+          `;
+          orderHistoryTableBody.appendChild(row);
+        });
+      } catch (err) {
+        orderHistoryTableBody.innerHTML = '<tr><td colspan="4">Failed to load order history.</td></tr>';
+        console.error(err);
+      }
     }
-    const items = customerOrders.map(o => o.item);
-    const quantities = customerOrders.map(o => o.quantity);
-    const totalPrice = customerOrders.reduce((sum, o) => sum + o.price * o.quantity, 0);
 
-    try {
-      // Send a POST request to record the order and deduct stock
-      const res = await fetch(stockURL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ items, quantities, totalPrice })
-      });
-      if (!res.ok) throw new Error('Failed to submit order');
+    // --- Customer Page ---
 
-      const data = await res.json();
-      if (data.status === 'success') {
-        customerResp.style.color = 'green';
-        customerResp.textContent = '✅ Order confirmed successfully!';
-        resetCustomerOrder();
+    // Clear order summary table
+    function clearOrderSummaryTable() {
+      orderSummaryTableBody.innerHTML = '';
+    }
+
+    // Update total price display
+    function updateTotalPrice() {
+      const total = orderSummary.reduce((sum, o) => sum + o.quantity * prices[o.item], 0);
+      totalPriceDisplay.textContent = `Total: ${total} THB`;
+    }
+
+    // Add order to summary table and array
+    function addOrderToSummary(item, quantity) {
+      // Check if item exists, if so increase quantity
+      const existing = orderSummary.find(o => o.item === item);
+      if (existing) {
+        existing.quantity += quantity;
       } else {
-        throw new Error('Backend error');
+        orderSummary.push({item, quantity});
       }
-    } catch (err) {
-      customerResp.style.color = 'red';
-      customerResp.textContent = '❌ Error confirming order: ' + err.message;
-      console.error(err);
+      renderOrderSummaryTable();
+      updateTotalPrice();
     }
-  };
 
-  function resetCustomerOrder() {
-    customerOrders = [];
-    renderSummary();
-    customerResp.textContent = '';
-  }
+    // Render order summary table rows
+    function renderOrderSummaryTable() {
+      clearOrderSummaryTable();
+      orderSummary.forEach((order, index) => {
+        const row = document.createElement('tr');
+        const price = order.quantity * prices[order.item];
+        row.innerHTML = `
+          <td>${order.item}</td>
+          <td>${order.quantity}</td>
+          <td>${price}</td>
+          <td><button class="small-button" data-index="${index}">Delete</button></td>
+        `;
+        orderSummaryTableBody.appendChild(row);
+      });
 
-</script>
+      // Attach delete handlers
+      const deleteButtons = orderSummaryTableBody.querySelectorAll('button.small-button');
+      deleteButtons.forEach(btn => {
+        btn.onclick = () => {
+          const i = parseInt(btn.getAttribute('data-index'));
+          orderSummary.splice(i, 1);
+          renderOrderSummaryTable();
+          updateTotalPrice();
+        };
+      });
+    }
 
+    // Handle customer form submit to add order
+    customerForm.addEventListener('submit', e => {
+      e.preventDefault();
+      const item = customerForm.item.value;
+      const quantity = Number(customerForm.quantity.value);
+      if (quantity < 1) return alert("Quantity must be at least 1.");
+      addOrderToSummary(item, quantity);
+      customerForm.reset();
+      customerForm.action.value = "Add"; // Reset to Add (though only Add option exists now)
+    });
+
+    // Confirm order button handler
+    confirmOrderBtn.addEventListener('click', async () => {
+      if (orderSummary.length === 0) {
+        customerResponse.textContent = 'No items to confirm.';
+        return;
+      }
+      customerResponse.textContent = 'Submitting order...';
+      try {
+        // Prepare requests for each item to remove quantities from stock
+        // We use action=Remove here to deduct stock
+        for (const order of orderSummary) {
+          const url = `${stockURL}?item=${encodeURIComponent(order.item)}&action=Remove&quantity=${encodeURIComponent(order.quantity)}`;
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`Failed to update stock for ${order.item}`);
+          await res.json();
+        }
+        customerResponse.style.color = 'green';
+        customerResponse.textContent = 'Order confirmed successfully!';
+        orderSummary = [];
+        renderOrderSummaryTable();
+        updateTotalPrice();
+      } catch (err) {
+        customerResponse.style.color = 'red';
+        customerResponse.textContent = 'Failed to confirm order: ' + err.message;
+        console.error(err);
+      }
+    });
+
+    // Back buttons
+    backToMenuFromCustomer.addEventListener('click', showMainMenu);
+    backToMenuFromStock.addEventListener('click', () => {
+      hideElement(liveStockSection);
+    });
+    backToMenuFromHistory.addEventListener('click', () => {
+      hideElement(orderHistorySection);
+    });
+
+    // Customer button handler
+    btnCustomer.addEventListener('click', showCustomerPage);
+
+    // Helper for hiding/showing
+    // Already defined showElement/hideElement
+
+    // Initialize to main menu on load
+    showMainMenu();
+
+  </script>
 </body>
 </html>
