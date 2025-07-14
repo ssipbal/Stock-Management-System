@@ -76,7 +76,7 @@
     width: auto;
   }
   #total-price {
-    font-size: 1.4rem;
+    font-size: 1.6rem;
     font-weight: bold;
     margin-top: 1rem;
     text-align: right;
@@ -206,6 +206,7 @@
   const customerResponse = document.getElementById('customer-response');
 
   let currentOrders = [];
+  let orderHistory = []; // local order history with timestamps
 
   // Show / Hide helpers
   function show(...els) { els.forEach(e => e.classList.remove('hidden')); }
@@ -280,34 +281,29 @@
       .catch(() => stockList.innerHTML = '<li>Error loading stock.</li>');
   }
 
-  // Load order history for Admin
+  // Load order history for Admin (from local array)
   function loadOrderHistory() {
-    orderHistoryList.innerHTML = '<li>Loading...</li>';
-    fetch(SCRIPT_URL + '?history=true')
-      .then(r => r.json())
-      .then(data => {
-        if(data.status === 'success') {
-          orderHistoryList.innerHTML = '';
-          if(data.orders.length === 0) {
-            orderHistoryList.innerHTML = '<li>No orders found.</li>';
-            return;
-          }
-          data.orders.forEach(order => {
-            const li = document.createElement('li');
-            const time = new Date(order.timestamp).toLocaleString();
-            let itemsText = '';
-            order.items.forEach(i => {
-              itemsText += `${i.item} x${i.quantity} (${i.price * i.quantity} THB), `;
-            });
-            itemsText = itemsText.slice(0, -2);
-            li.textContent = `${time} - ${itemsText} | Total: ${order.totalPrice} THB`;
-            orderHistoryList.appendChild(li);
-          });
-        } else {
-          orderHistoryList.innerHTML = '<li>Error loading order history.</li>';
-        }
-      })
-      .catch(() => orderHistoryList.innerHTML = '<li>Error loading order history.</li>');
+    orderHistoryList.innerHTML = '';
+    renderOrderHistory();
+  }
+
+  function renderOrderHistory() {
+    if(orderHistory.length === 0) {
+      orderHistoryList.innerHTML = '<li>No orders found.</li>';
+      return;
+    }
+    orderHistoryList.innerHTML = '';
+    orderHistory.forEach(order => {
+      const li = document.createElement('li');
+      const time = new Date(order.timestamp).toLocaleString();
+      let itemsText = '';
+      order.items.forEach(i => {
+        itemsText += `${i.item} x${i.quantity} (${i.price * i.quantity} THB), `;
+      });
+      itemsText = itemsText.slice(0, -2);
+      li.textContent = `${time} - ${itemsText} | Total: ${order.totalPrice} THB`;
+      orderHistoryList.appendChild(li);
+    });
   }
 
   // Back from Customer panel
@@ -316,6 +312,13 @@
     show(mainMenu);
     clearCustomerForm();
   };
+
+  function clearCustomerForm() {
+    currentOrders = [];
+    renderOrderSummary();
+    confirmOrderBtn.disabled = true;
+    customerResponse.textContent = '';
+  }
 
   // Customer order form submit
   orderForm.onsubmit = e => {
@@ -369,10 +372,10 @@
   confirmOrderBtn.onclick = () => {
     if(currentOrders.length === 0) return;
 
-    // Prepare order object
     const orderObj = {
       items: currentOrders,
-      totalPrice: currentOrders.reduce((sum, o) => sum + o.price * o.quantity, 0)
+      totalPrice: currentOrders.reduce((sum, o) => sum + o.price * o.quantity, 0),
+      timestamp: new Date().toISOString()
     };
 
     fetch(`${SCRIPT_URL}?confirmOrder=true&order=${encodeURIComponent(JSON.stringify(orderObj))}`)
@@ -381,9 +384,18 @@
         if(data.status === 'success') {
           customerResponse.style.color = 'green';
           customerResponse.textContent = '✅ Order confirmed successfully!';
+
+          // Add order to local order history
+          orderHistory.push(orderObj);
+
           currentOrders = [];
           renderOrderSummary();
           confirmOrderBtn.disabled = true;
+
+          // Refresh order history if admin panel & order history tab visible
+          if(!adminPanel.classList.contains('hidden') && !orderHistoryTab.classList.contains('hidden')) {
+            renderOrderHistory();
+          }
         } else {
           customerResponse.style.color = 'red';
           customerResponse.textContent = '❌ Failed to confirm order.';
@@ -394,7 +406,6 @@
         customerResponse.textContent = '❌ Failed to confirm order.';
       });
   };
-
 </script>
 
 </body>
