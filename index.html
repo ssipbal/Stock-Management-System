@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NFC Smart Inventory</title>
+  <title>NFC Smart Inventory System</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet" />
   <style>
@@ -22,63 +22,59 @@
       background: white;
       border-radius: 16px;
       box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      max-width: 450px;
+      max-width: 420px;
       width: 100%;
       padding: 30px;
       text-align: center;
     }
     h1, h2 {
+      margin-bottom: 20px;
       color: #2c3e50;
     }
     label {
-      text-align: left;
       display: block;
+      text-align: left;
       margin-top: 15px;
-      margin-bottom: 5px;
       font-weight: 600;
     }
-    input, select, button {
+    input, select {
       width: 100%;
       padding: 10px;
       font-size: 16px;
+      margin-bottom: 10px;
       border-radius: 8px;
       border: 1px solid #ccc;
-      margin-bottom: 10px;
-      font-family: 'Sarabun', sans-serif;
     }
     button {
-      background-color: #007acc;
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      background: #007acc;
       color: white;
       border: none;
-      font-weight: 600;
+      border-radius: 8px;
       cursor: pointer;
-      transition: background-color 0.3s ease;
+      font-weight: bold;
+      margin-top: 10px;
     }
-    button:hover { background-color: #005fa3; }
+    button:hover {
+      background: #005fa3;
+    }
     .hidden { display: none; }
-    #stock-list { text-align: left; list-style: none; padding: 0; }
-    #stock-list li { margin-bottom: 4px; }
-    #purchaseSummary ul {
+    #stock-list {
       list-style: none;
-      padding-left: 0;
+      padding: 0;
       text-align: left;
+      margin: 20px 0;
     }
-    .summary-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+    #stock-list li {
       margin-bottom: 6px;
     }
-    .summary-item button {
-      width: auto;
-      padding: 5px 10px;
-      font-size: 12px;
-      background-color: #e74c3c;
+    #summary {
+      text-align: left;
+      margin-top: 20px;
     }
-    .summary-item button:hover {
-      background-color: #c0392b;
-    }
-    .total-price {
+    #total {
       font-size: 20px;
       font-weight: bold;
       margin-top: 10px;
@@ -89,102 +85,107 @@
   <div class="container">
     <h1>NFC Smart Inventory</h1>
 
-    <!-- Mode Selection -->
+    <!-- Main Menu -->
     <div id="modeSelection">
-      <button onclick="enterCustomer()">Customer</button>
-      <button onclick="promptAdmin()">Admin</button>
+      <button onclick="selectMode('customer')">Customer</button>
+      <button onclick="selectMode('admin')">Admin</button>
     </div>
 
     <!-- Admin Section -->
     <div id="adminSection" class="hidden">
       <h2>Admin Mode</h2>
-      <div>
+      <div id="live-stock">
         <h3>Current Stock</h3>
         <ul id="stock-list"><li>Loading...</li></ul>
       </div>
-
-      <form id="stockForm">
+      <form id="adminForm">
         <label for="item">Item</label>
-        <select id="item">
+        <select id="item" required>
           <option value="Cookie">Cookie</option>
           <option value="Brownie">Brownie</option>
           <option value="Macaron">Macaron</option>
         </select>
-
         <label for="quantity">Quantity</label>
-        <input type="number" id="quantity" min="1" required>
-
+        <input type="number" id="quantity" min="1" required />
         <label for="action">Action</label>
-        <select id="action">
+        <select id="action" required>
           <option value="Add">Add</option>
           <option value="Remove">Remove</option>
         </select>
-
         <button type="submit">Submit</button>
-        <p id="response"></p>
       </form>
+      <p id="response"></p>
+      <button onclick="goBackToMain()">🔙 Back to Main</button>
     </div>
 
     <!-- Customer Section -->
     <div id="customerSection" class="hidden">
       <h2>Customer Mode</h2>
-      <form id="stockFormCustomer">
-        <label for="itemCustomer">Item</label>
-        <select id="itemCustomer">
-          <option value="Cookie">Cookie - 15฿</option>
-          <option value="Brownie">Brownie - 20฿</option>
-          <option value="Macaron">Macaron - 35฿</option>
+      <form id="customerForm">
+        <label for="c_item">Item</label>
+        <select id="c_item" required>
+          <option value="Cookie">Cookie (15฿)</option>
+          <option value="Brownie">Brownie (20฿)</option>
+          <option value="Macaron">Macaron (35฿)</option>
         </select>
-
-        <label for="quantityCustomer">Quantity</label>
-        <input type="number" id="quantityCustomer" min="1" required>
-
-        <button type="button" id="addToSummaryBtn">Add to Summary</button>
+        <label for="c_quantity">Quantity</label>
+        <input type="number" id="c_quantity" min="1" required />
+        <button type="submit">Add to Order</button>
       </form>
 
-      <div id="purchaseSummary">No items added.</div>
-      <button id="confirmPurchaseBtn">Confirm Purchase</button>
+      <div id="summary">
+        <h3>Order Summary</h3>
+        <ul id="order-list"></ul>
+        <div id="total">Total: 0฿</div>
+        <button onclick="submitOrder()">Confirm Order</button>
+      </div>
+
       <p id="responseCustomer"></p>
+      <button onclick="goBackToMain()">🔙 Back to Main</button>
     </div>
   </div>
 
   <script>
     const stockURL = 'https://script.google.com/macros/s/AKfycbxOSlRFifSy6sP5Vb9qOGzLQG4FngeEJkaNCnHjl71bTER196WcNWfMZXuRr_LVmKdu/exec';
     const prices = { Cookie: 15, Brownie: 20, Macaron: 35 };
-    let purchaseSummary = {};
+    const order = [];
 
-    function show(id) {
+    function selectMode(mode) {
       document.getElementById("modeSelection").classList.add("hidden");
-      document.getElementById("adminSection").classList.add("hidden");
-      document.getElementById("customerSection").classList.add("hidden");
-      document.getElementById(id).classList.remove("hidden");
-    }
-
-    function promptAdmin() {
-      const pass = prompt("Enter admin password:");
-      if (pass === "12345") {
-        show("adminSection");
-        updateLiveStock();
+      if (mode === "admin") {
+        const pass = prompt("Enter admin password:");
+        if (pass === "12345") {
+          document.getElementById("adminSection").classList.remove("hidden");
+          updateLiveStock();
+        } else {
+          alert("Incorrect password.");
+          goBackToMain();
+        }
       } else {
-        alert("Incorrect password.");
+        document.getElementById("customerSection").classList.remove("hidden");
       }
     }
 
-    function enterCustomer() {
-      show("customerSection");
+    function goBackToMain() {
+      document.getElementById("modeSelection").classList.remove("hidden");
+      document.getElementById("adminSection").classList.add("hidden");
+      document.getElementById("customerSection").classList.add("hidden");
+      document.getElementById("response").innerText = "";
+      document.getElementById("responseCustomer").innerText = "";
+      document.getElementById("order-list").innerHTML = "";
+      document.getElementById("total").innerText = "Total: 0฿";
+      order.length = 0;
     }
 
-    // Admin
     function updateLiveStock() {
       fetch(stockURL)
         .then(res => res.json())
         .then(data => {
-          const stock = data.stock || data;
           const list = document.getElementById("stock-list");
           list.innerHTML = '';
-          for (const item in stock) {
+          for (const item in data.stock) {
             const li = document.createElement("li");
-            li.textContent = `${item}: ${stock[item]}`;
+            li.textContent = `${item}: ${data.stock[item]}`;
             list.appendChild(li);
           }
         })
@@ -193,84 +194,72 @@
         });
     }
 
-    document.getElementById("stockForm").addEventListener("submit", e => {
+    document.getElementById("adminForm").addEventListener("submit", function (e) {
       e.preventDefault();
       const item = document.getElementById("item").value;
       const quantity = document.getElementById("quantity").value;
       const action = document.getElementById("action").value;
       const url = `${stockURL}?item=${item}&action=${action}&quantity=${quantity}`;
-
       fetch(url)
-        .then(res => res.text())
+        .then(res => res.json())
         .then(() => {
           document.getElementById("response").innerText = "✅ Submitted!";
           updateLiveStock();
         })
         .catch(err => {
-          document.getElementById("response").innerText = "❌ " + err;
+          document.getElementById("response").innerText = "❌ Error: " + err;
         });
     });
 
-    // Customer
-    document.getElementById("addToSummaryBtn").addEventListener("click", () => {
-      const item = document.getElementById("itemCustomer").value;
-      const qty = parseInt(document.getElementById("quantityCustomer").value);
-      if (!qty || qty < 1) return alert("Enter valid quantity.");
-      purchaseSummary[item] = (purchaseSummary[item] || 0) + qty;
-      document.getElementById("quantityCustomer").value = "";
-      renderSummary();
+    document.getElementById("customerForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const item = document.getElementById("c_item").value;
+      const quantity = parseInt(document.getElementById("c_quantity").value);
+      if (quantity < 1) return;
+      const existing = order.find(o => o.item === item);
+      if (existing) existing.quantity += quantity;
+      else order.push({ item, quantity });
+      renderOrder();
     });
 
-    function renderSummary() {
-      const summaryDiv = document.getElementById("purchaseSummary");
-      if (Object.keys(purchaseSummary).length === 0) {
-        summaryDiv.innerHTML = "No items added.";
-        return;
-      }
-
-      let html = "<ul>";
+    function renderOrder() {
+      const ul = document.getElementById("order-list");
+      ul.innerHTML = '';
       let total = 0;
-
-      for (const item in purchaseSummary) {
-        const qty = purchaseSummary[item];
-        const cost = qty * prices[item];
-        total += cost;
-        html += `
-          <li class="summary-item">
-            ${item} × ${qty} = ${cost}฿
-            <button onclick="removeItem('${item}')">🗑️</button>
-          </li>`;
-      }
-
-      html += `</ul><div class="total-price">Total: ${total}฿</div>`;
-      summaryDiv.innerHTML = html;
+      order.forEach((o, i) => {
+        const li = document.createElement("li");
+        const subtotal = o.quantity * prices[o.item];
+        li.textContent = `${o.item} x ${o.quantity} = ${subtotal}฿ `;
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "❌";
+        delBtn.style.marginLeft = "10px";
+        delBtn.onclick = () => {
+          order.splice(i, 1);
+          renderOrder();
+        };
+        li.appendChild(delBtn);
+        ul.appendChild(li);
+        total += subtotal;
+      });
+      document.getElementById("total").innerText = `Total: ${total}฿`;
     }
 
-    function removeItem(item) {
-      delete purchaseSummary[item];
-      renderSummary();
+    function submitOrder() {
+      if (order.length === 0) return alert("No items to submit.");
+      const promises = order.map(o => {
+        const url = `${stockURL}?item=${o.item}&action=Remove&quantity=${o.quantity}`;
+        return fetch(url).then(res => res.json());
+      });
+      Promise.all(promises)
+        .then(() => {
+          document.getElementById("responseCustomer").innerText = "✅ Order Confirmed!";
+          order.length = 0;
+          renderOrder();
+        })
+        .catch(() => {
+          document.getElementById("responseCustomer").innerText = "❌ Error submitting order.";
+        });
     }
-
-    document.getElementById("confirmPurchaseBtn").addEventListener("click", async () => {
-      const responseEl = document.getElementById("responseCustomer");
-      if (Object.keys(purchaseSummary).length === 0) {
-        return alert("No items to confirm.");
-      }
-
-      responseEl.innerText = "⏳ Processing...";
-      try {
-        for (const item in purchaseSummary) {
-          const qty = purchaseSummary[item];
-          const url = `${stockURL}?item=${item}&action=Remove&quantity=${qty}`;
-          await fetch(url);
-        }
-        responseEl.innerText = "✅ Purchase completed!";
-        purchaseSummary = {};
-        renderSummary();
-      } catch (err) {
-        responseEl.innerText = "❌ Error: " + err.message;
-      }
-    });
   </script>
 </body>
 </html>
