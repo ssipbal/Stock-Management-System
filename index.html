@@ -78,6 +78,11 @@
     .summary-item button:hover {
       background-color: #c0392b;
     }
+    .total-price {
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -174,11 +179,12 @@
       fetch(stockURL)
         .then(res => res.json())
         .then(data => {
+          const stock = data.stock || data;
           const list = document.getElementById("stock-list");
           list.innerHTML = '';
-          for (const item in data) {
+          for (const item in stock) {
             const li = document.createElement("li");
-            li.textContent = `${item}: ${data[item]}`;
+            li.textContent = `${item}: ${stock[item]}`;
             list.appendChild(li);
           }
         })
@@ -236,7 +242,7 @@
           </li>`;
       }
 
-      html += `</ul><strong>Total: ${total}฿</strong>`;
+      html += `</ul><div class="total-price">Total: ${total}฿</div>`;
       summaryDiv.innerHTML = html;
     }
 
