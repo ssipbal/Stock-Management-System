@@ -57,7 +57,7 @@
   ul li {
     margin-bottom: 0.5rem;
   }
-  #stock-list, #order-history-list {
+  #stock-list {
     max-height: 200px;
     overflow-y: auto;
     border: 1px solid #ddd;
@@ -76,19 +76,10 @@
     width: auto;
   }
   #total-price {
-    font-size: 1.6rem;
+    font-size: 1.4rem;
     font-weight: bold;
     margin-top: 1rem;
     text-align: right;
-  }
-  .tab-buttons {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 1rem;
-  }
-  .tab-buttons button {
-    margin: 0 5px;
-    flex: 1;
   }
   .hidden {
     display: none;
@@ -122,22 +113,9 @@
 
 <div class="container hidden" id="admin-panel">
   <h2>Admin Panel</h2>
-  <div class="tab-buttons">
-    <button id="stock-tab-btn">Live Stock</button>
-    <button id="order-history-tab-btn">Order History</button>
-  </div>
-  
-  <div id="stock-tab">
-    <h3>Current Stock</h3>
-    <ul id="stock-list"><li>Loading...</li></ul>
-    <button id="admin-back">Back to Main</button>
-  </div>
-  
-  <div id="order-history-tab" class="hidden">
-    <h3>Order History</h3>
-    <ul id="order-history-list"><li>Loading...</li></ul>
-    <button id="order-history-back">Back to Main</button>
-  </div>
+  <h3>Current Stock</h3>
+  <ul id="stock-list"><li>Loading...</li></ul>
+  <button id="admin-back">Back to Main</button>
 </div>
 
 <div class="container hidden" id="customer-panel">
@@ -165,9 +143,8 @@
 </div>
 
 <script>
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbznXRTFU3rYteSzDMFmP0WD4h3ApPNZL358C3aTUaFDwohnmotyN7ii_bLp5HJUwQ6a/exec';
+  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxMhdQs59nCZ6mF58m_MBDow0fATHlVeYM2KSHb09Yzok4t2O-6PE9pqBFRbcyuE6YG/exec';
   
-  // Prices for items
   const PRICES = {
     Cookie: 15,
     Brownie: 20,
@@ -186,14 +163,8 @@
   const adminLoginResponse = document.getElementById('admin-login-response');
 
   const adminPanel = document.getElementById('admin-panel');
-  const stockTabBtn = document.getElementById('stock-tab-btn');
-  const orderHistoryTabBtn = document.getElementById('order-history-tab-btn');
-  const stockTab = document.getElementById('stock-tab');
-  const orderHistoryTab = document.getElementById('order-history-tab');
   const stockList = document.getElementById('stock-list');
-  const orderHistoryList = document.getElementById('order-history-list');
   const adminBack = document.getElementById('admin-back');
-  const orderHistoryBack = document.getElementById('order-history-back');
 
   const customerPanel = document.getElementById('customer-panel');
   const orderForm = document.getElementById('order-form');
@@ -206,13 +177,10 @@
   const customerResponse = document.getElementById('customer-response');
 
   let currentOrders = [];
-  let orderHistory = []; // local order history with timestamps
 
-  // Show / Hide helpers
   function show(...els) { els.forEach(e => e.classList.remove('hidden')); }
   function hide(...els) { els.forEach(e => e.classList.add('hidden')); }
 
-  // Switch to Admin Login
   adminBtn.onclick = () => {
     hide(mainMenu);
     show(adminLogin);
@@ -220,48 +188,32 @@
     adminLoginResponse.textContent = '';
   };
 
-  // Back from Admin Login
+  customerBtn.onclick = () => {
+    hide(mainMenu);
+    show(customerPanel);
+    clearCustomerForm();
+  };
+
   adminLoginBack.onclick = () => {
     hide(adminLogin);
     show(mainMenu);
   };
 
-  // Admin login submit
   adminLoginBtn.onclick = () => {
     if (adminPassword.value === '12345') {
       hide(adminLogin);
       show(adminPanel);
       loadStock();
-      loadOrderHistory();
-      showStockTab();
     } else {
       adminLoginResponse.textContent = 'Incorrect password!';
     }
   };
 
-  // Back from Admin panel
   adminBack.onclick = () => {
     hide(adminPanel);
     show(mainMenu);
   };
-  orderHistoryBack.onclick = adminBack.onclick;
 
-  // Tab switching in Admin panel
-  stockTabBtn.onclick = () => showStockTab();
-  orderHistoryTabBtn.onclick = () => showOrderHistoryTab();
-
-  function showStockTab() {
-    show(stockTab);
-    hide(orderHistoryTab);
-    loadStock();
-  }
-  function showOrderHistoryTab() {
-    show(orderHistoryTab);
-    hide(stockTab);
-    loadOrderHistory();
-  }
-
-  // Load live stock for Admin
   function loadStock() {
     stockList.innerHTML = '<li>Loading...</li>';
     fetch(SCRIPT_URL)
@@ -281,53 +233,12 @@
       .catch(() => stockList.innerHTML = '<li>Error loading stock.</li>');
   }
 
-  // Load order history for Admin (from local array)
-  function loadOrderHistory() {
-    orderHistoryList.innerHTML = '';
-    renderOrderHistory();
-  }
-
-  function renderOrderHistory() {
-    if(orderHistory.length === 0) {
-      orderHistoryList.innerHTML = '<li>No orders found.</li>';
-      return;
-    }
-    orderHistoryList.innerHTML = '';
-    orderHistory.forEach(order => {
-      const li = document.createElement('li');
-      const time = new Date(order.timestamp).toLocaleString();
-      let itemsText = '';
-      order.items.forEach(i => {
-        itemsText += `${i.item} x${i.quantity} (${i.price * i.quantity} THB), `;
-      });
-      itemsText = itemsText.slice(0, -2);
-      li.textContent = `${time} - ${itemsText} | Total: ${order.totalPrice} THB`;
-      orderHistoryList.appendChild(li);
-    });
-  }
-
-  // Back from Customer panel
-  customerBack.onclick = () => {
-    hide(customerPanel);
-    show(mainMenu);
-    clearCustomerForm();
-  };
-
-  function clearCustomerForm() {
-    currentOrders = [];
-    renderOrderSummary();
-    confirmOrderBtn.disabled = true;
-    customerResponse.textContent = '';
-  }
-
-  // Customer order form submit
   orderForm.onsubmit = e => {
     e.preventDefault();
     const item = itemSelect.value;
     const quantity = Number(quantityInput.value);
     if(quantity <= 0) return;
 
-    // Add to currentOrders array
     currentOrders.push({
       item,
       quantity,
@@ -339,7 +250,6 @@
     customerResponse.textContent = '';
   };
 
-  // Render customer order summary
   function renderOrderSummary() {
     orderSummaryList.innerHTML = '';
     let total = 0;
@@ -356,7 +266,6 @@
     totalPriceDiv.textContent = `Total: ${total} THB`;
   }
 
-  // Delete order from summary
   orderSummaryList.onclick = e => {
     if(e.target.tagName === 'BUTTON') {
       const idx = Number(e.target.dataset.index);
@@ -368,14 +277,13 @@
     }
   };
 
-  // Confirm order button
   confirmOrderBtn.onclick = () => {
     if(currentOrders.length === 0) return;
 
+    // Prepare order object
     const orderObj = {
       items: currentOrders,
-      totalPrice: currentOrders.reduce((sum, o) => sum + o.price * o.quantity, 0),
-      timestamp: new Date().toISOString()
+      totalPrice: currentOrders.reduce((sum, o) => sum + o.price * o.quantity, 0)
     };
 
     fetch(`${SCRIPT_URL}?confirmOrder=true&order=${encodeURIComponent(JSON.stringify(orderObj))}`)
@@ -384,18 +292,9 @@
         if(data.status === 'success') {
           customerResponse.style.color = 'green';
           customerResponse.textContent = '✅ Order confirmed successfully!';
-
-          // Add order to local order history
-          orderHistory.push(orderObj);
-
           currentOrders = [];
           renderOrderSummary();
           confirmOrderBtn.disabled = true;
-
-          // Refresh order history if admin panel & order history tab visible
-          if(!adminPanel.classList.contains('hidden') && !orderHistoryTab.classList.contains('hidden')) {
-            renderOrderHistory();
-          }
         } else {
           customerResponse.style.color = 'red';
           customerResponse.textContent = '❌ Failed to confirm order.';
@@ -406,6 +305,13 @@
         customerResponse.textContent = '❌ Failed to confirm order.';
       });
   };
+
+  function clearCustomerForm() {
+    currentOrders = [];
+    renderOrderSummary();
+    confirmOrderBtn.disabled = true;
+    customerResponse.textContent = '';
+  }
 </script>
 
 </body>
