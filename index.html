@@ -299,37 +299,40 @@
       document.getElementById("total").innerText = `Total: ${total}฿`;
     }
 
-    function submitOrder() {
+    async function submitOrder() {
       if (order.length === 0) return alert("No items to submit.");
+      document.getElementById("responseCustomer").innerText = "⏳ Processing order...";
 
-      // Show receipt popup before clearing order
-      showReceipt(order);
-
-      // Send all update requests
-      const promises = order.map(o => {
-        const url = `${stockURL}?item=${encodeURIComponent(o.item)}&action=Remove&quantity=${encodeURIComponent(o.quantity)}`;
-        return fetch(url)
-          .then(res => {
+      try {
+        // Send updates sequentially or in parallel but await all
+        const results = await Promise.all(order.map(o => {
+          const url = `${stockURL}?item=${encodeURIComponent(o.item)}&action=Remove&quantity=${encodeURIComponent(o.quantity)}`;
+          return fetch(url).then(res => {
             if (!res.ok) throw new Error(`Failed to update ${o.item}`);
             return res.json();
-          })
-          .catch(err => {
-            console.error(err);
-            return null;
           });
-      });
+        }));
 
-      Promise.all(promises).then(results => {
-        const failedUpdates = results.filter(r => r === null);
-        if (failedUpdates.length > 0) {
+        // Check if any failed (null or error)
+        const failed = results.some(r => !r || r.status === 'error');
+        if (failed) {
           document.getElementById("responseCustomer").innerText = "❌ Some items failed to update. Please try again.";
-        } else {
-          document.getElementById("responseCustomer").innerText = "✅ Order Confirmed!";
-          order.length = 0;
-          renderOrder();
-          updateLiveStock();
+          return;
         }
-      });
+
+        // All succeeded, clear order, update stock, show receipt
+        document.getElementById("responseCustomer").innerText = "✅ Order Confirmed!";
+        updateLiveStock();
+
+        // Show popup receipt after updates succeed
+        showReceipt(order);
+        order.length = 0;
+        renderOrder();
+
+      } catch (err) {
+        document.getElementById("responseCustomer").innerText = "❌ Error submitting order. Try again.";
+        console.error(err);
+      }
     }
 
     // Receipt popup handlers
