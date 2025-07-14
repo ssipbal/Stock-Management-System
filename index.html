@@ -79,51 +79,6 @@
       font-weight: bold;
       margin-top: 10px;
     }
-    /* Popup styles */
-    #receipt-popup {
-      position: fixed;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      background: white;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
-      padding: 20px;
-      border-radius: 12px;
-      max-width: 350px;
-      width: 90%;
-      z-index: 1000;
-      display: none;
-    }
-    #receipt-popup h3 {
-      margin-top: 0;
-      margin-bottom: 10px;
-    }
-    #receipt-list {
-      text-align: left;
-      max-height: 200px;
-      overflow-y: auto;
-      margin-bottom: 10px;
-    }
-    #receipt-list li {
-      margin-bottom: 6px;
-    }
-    #receipt-total {
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-    #receipt-timestamp {
-      font-size: 0.9em;
-      color: #666;
-      margin-bottom: 20px;
-    }
-    #close-receipt-btn {
-      background: #e74c3c;
-      border: none;
-      color: white;
-      padding: 8px 16px;
-      border-radius: 8px;
-      cursor: pointer;
-      font-weight: bold;
-    }
   </style>
 </head>
 <body>
@@ -190,17 +145,8 @@
     </div>
   </div>
 
-  <!-- Receipt Popup -->
-  <div id="receipt-popup">
-    <h3>Order Receipt</h3>
-    <ul id="receipt-list"></ul>
-    <div id="receipt-total"></div>
-    <div id="receipt-timestamp"></div>
-    <button id="close-receipt-btn">Close ✖</button>
-  </div>
-
   <script>
-    const stockURL = 'https://script.google.com/macros/s/AKfycbxOSlRFifSy6sP5Vb9qOGzLQG4FngeEJkaNCnHjl71bTER196WcNWfMZXuRr_LVmKdu/exec';
+    const stockURL = 'https://script.google.com/macros/s/AKfycbxMhdQs59nCZ6mF58m_MBDow0fATHlVeYM2KSHb09Yzok4t2O-6PE9pqBFRbcyuE6YG/exec';
     const prices = { Cookie: 15, Brownie: 20, Macaron: 35 };
     const order = [];
 
@@ -229,7 +175,6 @@
       document.getElementById("order-list").innerHTML = "";
       document.getElementById("total").innerText = "Total: 0฿";
       order.length = 0;
-      hideReceiptPopup();
     }
 
     function updateLiveStock() {
@@ -254,7 +199,7 @@
       const item = document.getElementById("item").value;
       const quantity = document.getElementById("quantity").value;
       const action = document.getElementById("action").value;
-      const url = `${stockURL}?item=${encodeURIComponent(item)}&action=${encodeURIComponent(action)}&quantity=${encodeURIComponent(quantity)}`;
+      const url = `${stockURL}?item=${item}&action=${action}&quantity=${quantity}`;
       fetch(url)
         .then(res => res.json())
         .then(() => {
@@ -301,69 +246,25 @@
 
     async function submitOrder() {
       if (order.length === 0) return alert("No items to submit.");
+
       document.getElementById("responseCustomer").innerText = "⏳ Processing order...";
 
       try {
-        // Send updates sequentially or in parallel but await all
-        const results = await Promise.all(order.map(o => {
+        for (const o of order) {
           const url = `${stockURL}?item=${encodeURIComponent(o.item)}&action=Remove&quantity=${encodeURIComponent(o.quantity)}`;
-          return fetch(url).then(res => {
-            if (!res.ok) throw new Error(`Failed to update ${o.item}`);
-            return res.json();
-          });
-        }));
-
-        // Check if any failed (null or error)
-        const failed = results.some(r => !r || r.status === 'error');
-        if (failed) {
-          document.getElementById("responseCustomer").innerText = "❌ Some items failed to update. Please try again.";
-          return;
+          const res = await fetch(url);
+          if (!res.ok) throw new Error(`Failed to update ${o.item}`);
+          const data = await res.json();
+          if (data.status === 'error') throw new Error(`Error updating ${o.item}: ${data.message || 'Unknown error'}`);
         }
-
-        // All succeeded, clear order, update stock, show receipt
         document.getElementById("responseCustomer").innerText = "✅ Order Confirmed!";
-        updateLiveStock();
-
-        // Show popup receipt after updates succeed
-        showReceipt(order);
         order.length = 0;
         renderOrder();
-
-      } catch (err) {
+      } catch (error) {
         document.getElementById("responseCustomer").innerText = "❌ Error submitting order. Try again.";
-        console.error(err);
+        console.error(error);
       }
     }
-
-    // Receipt popup handlers
-    const receiptPopup = document.getElementById('receipt-popup');
-    const receiptList = document.getElementById('receipt-list');
-    const receiptTotal = document.getElementById('receipt-total');
-    const receiptTimestamp = document.getElementById('receipt-timestamp');
-    const closeReceiptBtn = document.getElementById('close-receipt-btn');
-
-    function showReceipt(orderArr) {
-      receiptList.innerHTML = '';
-      let total = 0;
-      orderArr.forEach(o => {
-        const li = document.createElement('li');
-        const subtotal = o.quantity * prices[o.item];
-        li.textContent = `${o.item} x ${o.quantity} = ${subtotal}฿`;
-        receiptList.appendChild(li);
-        total += subtotal;
-      });
-      receiptTotal.textContent = `Total: ${total}฿`;
-      const now = new Date();
-      receiptTimestamp.textContent = `Time: ${now.toLocaleString()}`;
-      receiptPopup.style.display = 'block';
-    }
-
-    function hideReceiptPopup() {
-      receiptPopup.style.display = 'none';
-    }
-
-    closeReceiptBtn.onclick = hideReceiptPopup;
-
   </script>
 </body>
 </html>
