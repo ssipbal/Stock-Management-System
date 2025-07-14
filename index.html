@@ -1,396 +1,265 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>NFC Smart Inventory Management System</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    background: #eef3f7;
-    margin: 0; padding: 0;
-    display: flex; justify-content: center; align-items: center;
-    min-height: 100vh;
-  }
-  .container {
-    background: white;
-    padding: 20px 30px;
-    border-radius: 12px;
-    box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-    max-width: 480px;
-    width: 100%;
-  }
-  h1, h2, h3 {
-    text-align: center;
-    margin-bottom: 1rem;
-  }
-  label {
-    display: block;
-    margin-top: 1rem;
-    font-weight: bold;
-  }
-  select, input[type=number], input[type=password] {
-    width: 100%;
-    padding: 8px 10px;
-    margin-top: 0.3rem;
-    border-radius: 6px;
-    border: 1px solid #ccc;
-  }
-  button {
-    margin-top: 1.5rem;
-    width: 100%;
-    padding: 10px;
-    border: none;
-    border-radius: 6px;
-    background-color: #007acc;
-    color: white;
-    font-weight: bold;
-    cursor: pointer;
-  }
-  button:hover {
-    background-color: #005fa3;
-  }
-  ul {
-    list-style: none;
-    padding-left: 0;
-  }
-  ul li {
-    margin-bottom: 0.5rem;
-  }
-  #stock-list, #order-history-list {
-    max-height: 200px;
-    overflow-y: auto;
-    border: 1px solid #ddd;
-    padding: 10px;
-    border-radius: 6px;
-    background: #fafafa;
-  }
-  .summary-item {
-    display: flex;
-    justify-content: space-between;
-  }
-  .summary-item button {
-    background: #e74c3c;
-    padding: 2px 6px;
-    font-weight: normal;
-    width: auto;
-  }
-  #total-price {
-    font-size: 1.4rem;
-    font-weight: bold;
-    margin-top: 1rem;
-    text-align: right;
-  }
-  .hidden {
-    display: none;
-  }
-  #response {
-    margin-top: 1rem;
-    font-weight: bold;
-    text-align: center;
-  }
-  #back-btn {
-    background-color: #777;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <title>NFC Smart Inventory System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: 'Sarabun', sans-serif;
+      background: #eef3f7;
+      color: #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      max-width: 420px;
+      width: 100%;
+      padding: 30px;
+      text-align: center;
+    }
+    h1, h2 {
+      margin-bottom: 20px;
+      color: #2c3e50;
+    }
+    label {
+      display: block;
+      text-align: left;
+      margin-top: 15px;
+      font-weight: 600;
+    }
+    input, select {
+      width: 100%;
+      padding: 10px;
+      font-size: 16px;
+      margin-bottom: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      background: #007acc;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #005fa3;
+    }
+    .hidden { display: none; }
+    #stock-list {
+      list-style: none;
+      padding: 0;
+      text-align: left;
+      margin: 20px 0;
+    }
+    #stock-list li {
+      margin-bottom: 6px;
+    }
+    #summary {
+      text-align: left;
+      margin-top: 20px;
+    }
+    #total {
+      font-size: 20px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+  </style>
 </head>
 <body>
+  <div class="container">
+    <h1>NFC Smart Inventory</h1>
 
-<div class="container" id="main-menu">
-  <h1>NFC Smart Inventory Management System</h1>
-  <button id="admin-btn">Admin</button>
-  <button id="customer-btn">Customer</button>
-</div>
+    <!-- Main Menu -->
+    <div id="modeSelection">
+      <button onclick="selectMode('customer')">Customer</button>
+      <button onclick="selectMode('admin')">Admin</button>
+    </div>
 
-<div class="container hidden" id="admin-login">
-  <h2>Admin Login</h2>
-  <label for="admin-password">Password:</label>
-  <input type="password" id="admin-password" />
-  <button id="admin-login-btn">Login</button>
-  <button id="admin-login-back">Back</button>
-  <p id="admin-login-response" style="color:red;"></p>
-</div>
+    <!-- Admin Section -->
+    <div id="adminSection" class="hidden">
+      <h2>Admin Mode</h2>
+      <div id="live-stock">
+        <h3>Current Stock</h3>
+        <ul id="stock-list"><li>Loading...</li></ul>
+      </div>
+      <form id="adminForm">
+        <label for="item">Item</label>
+        <select id="item" required>
+          <option value="Cookie">Cookie</option>
+          <option value="Brownie">Brownie</option>
+          <option value="Macaron">Macaron</option>
+        </select>
+        <label for="quantity">Quantity</label>
+        <input type="number" id="quantity" min="1" required />
+        <label for="action">Action</label>
+        <select id="action" required>
+          <option value="Add">Add</option>
+          <option value="Remove">Remove</option>
+        </select>
+        <button type="submit">Submit</button>
+      </form>
+      <p id="response"></p>
+      <button onclick="goBackToMain()">🔙 Back to Main</button>
+    </div>
 
-<div class="container hidden" id="admin-panel">
-  <h2>Admin Panel</h2>
-  <div style="display:flex; gap:10px; justify-content:center; margin-bottom:1rem;">
-    <button id="stock-tab-btn" style="flex:1;">Live Stock</button>
-    <button id="order-history-tab-btn" style="flex:1;">Order History</button>
+    <!-- Customer Section -->
+    <div id="customerSection" class="hidden">
+      <h2>Customer Mode</h2>
+      <form id="customerForm">
+        <label for="c_item">Item</label>
+        <select id="c_item" required>
+          <option value="Cookie">Cookie (15฿)</option>
+          <option value="Brownie">Brownie (20฿)</option>
+          <option value="Macaron">Macaron (35฿)</option>
+        </select>
+        <label for="c_quantity">Quantity</label>
+        <input type="number" id="c_quantity" min="1" required />
+        <button type="submit">Add to Order</button>
+      </form>
+
+      <div id="summary">
+        <h3>Order Summary</h3>
+        <ul id="order-list"></ul>
+        <div id="total">Total: 0฿</div>
+        <button onclick="submitOrder()">Confirm Order</button>
+      </div>
+
+      <p id="responseCustomer"></p>
+      <button onclick="goBackToMain()">🔙 Back to Main</button>
+    </div>
   </div>
-  
-  <div id="stock-tab">
-    <h3>Current Stock</h3>
-    <ul id="stock-list"><li>Loading...</li></ul>
-    <button id="admin-back">Back to Main</button>
-  </div>
-  
-  <div id="order-history-tab" class="hidden">
-    <h3>Order History</h3>
-    <ul id="order-history-list"><li>Loading...</li></ul>
-    <button id="order-history-back">Back to Main</button>
-  </div>
-</div>
 
-<div class="container hidden" id="customer-panel">
-  <h2>Customer Order</h2>
-  <form id="order-form">
-    <label for="item">Item:</label>
-    <select id="item" required>
-      <option value="Cookie">Cookie - 15 THB</option>
-      <option value="Brownie">Brownie - 20 THB</option>
-      <option value="Macaron">Macaron - 35 THB</option>
-    </select>
-    
-    <label for="quantity">Quantity:</label>
-    <input type="number" id="quantity" min="1" value="1" required />
-    
-    <button type="submit">Add to Summary</button>
-  </form>
-  
-  <h3>Order Summary</h3>
-  <ul id="order-summary-list"></ul>
-  <div id="total-price">Total: 0 THB</div>
-  <button id="confirm-order-btn" disabled>Confirm Order</button>
-  <button id="customer-back">Back to Main</button>
-  <p id="customer-response"></p>
-</div>
+  <script>
+    const stockURL = 'https://script.google.com/macros/s/AKfycbxOSlRFifSy6sP5Vb9qOGzLQG4FngeEJkaNCnHjl71bTER196WcNWfMZXuRr_LVmKdu/exec';
+    const prices = { Cookie: 15, Brownie: 20, Macaron: 35 };
+    const order = [];
 
-<script>
-  const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxMhdQs59nCZ6mF58m_MBDow0fATHlVeYM2KSHb09Yzok4t2O-6PE9pqBFRbcyuE6YG/exec';
-
-  const PRICES = {
-    Cookie: 15,
-    Brownie: 20,
-    Macaron: 35
-  };
-
-  const mainMenu = document.getElementById('main-menu');
-  const adminBtn = document.getElementById('admin-btn');
-  const customerBtn = document.getElementById('customer-btn');
-
-  const adminLogin = document.getElementById('admin-login');
-  const adminPassword = document.getElementById('admin-password');
-  const adminLoginBtn = document.getElementById('admin-login-btn');
-  const adminLoginBack = document.getElementById('admin-login-back');
-  const adminLoginResponse = document.getElementById('admin-login-response');
-
-  const adminPanel = document.getElementById('admin-panel');
-  const stockTabBtn = document.getElementById('stock-tab-btn');
-  const orderHistoryTabBtn = document.getElementById('order-history-tab-btn');
-  const stockTab = document.getElementById('stock-tab');
-  const orderHistoryTab = document.getElementById('order-history-tab');
-  const stockList = document.getElementById('stock-list');
-  const orderHistoryList = document.getElementById('order-history-list');
-  const adminBack = document.getElementById('admin-back');
-  const orderHistoryBack = document.getElementById('order-history-back');
-
-  const customerPanel = document.getElementById('customer-panel');
-  const orderForm = document.getElementById('order-form');
-  const itemSelect = document.getElementById('item');
-  const quantityInput = document.getElementById('quantity');
-  const orderSummaryList = document.getElementById('order-summary-list');
-  const totalPriceDiv = document.getElementById('total-price');
-  const confirmOrderBtn = document.getElementById('confirm-order-btn');
-  const customerBack = document.getElementById('customer-back');
-  const customerResponse = document.getElementById('customer-response');
-
-  let currentOrders = [];
-
-  function show(...els) { els.forEach(e => e.classList.remove('hidden')); }
-  function hide(...els) { els.forEach(e => e.classList.add('hidden')); }
-
-  // Main menu buttons
-  adminBtn.onclick = () => {
-    hide(mainMenu);
-    show(adminLogin);
-    adminPassword.value = '';
-    adminLoginResponse.textContent = '';
-  };
-  customerBtn.onclick = () => {
-    hide(mainMenu);
-    show(customerPanel);
-    clearCustomerForm();
-  };
-
-  // Admin login
-  adminLoginBack.onclick = () => {
-    hide(adminLogin);
-    show(mainMenu);
-  };
-  adminLoginBtn.onclick = () => {
-    if (adminPassword.value === '12345') {
-      hide(adminLogin);
-      show(adminPanel);
-      showStockTab();
-    } else {
-      adminLoginResponse.textContent = 'Incorrect password!';
-    }
-  };
-
-  // Admin panel navigation
-  adminBack.onclick = () => {
-    hide(adminPanel);
-    show(mainMenu);
-  };
-  orderHistoryBack.onclick = adminBack.onclick;
-
-  stockTabBtn.onclick = () => showStockTab();
-  orderHistoryTabBtn.onclick = () => showOrderHistoryTab();
-
-  // Show stock tab
-  function showStockTab() {
-    show(stockTab);
-    hide(orderHistoryTab);
-    loadStock();
-  }
-
-  // Show order history tab
-  function showOrderHistoryTab() {
-    show(orderHistoryTab);
-    hide(stockTab);
-    loadOrderHistory();
-  }
-
-  // Load current stock
-  function loadStock() {
-    stockList.innerHTML = '<li>Loading...</li>';
-    fetch(SCRIPT_URL)
-      .then(r => r.json())
-      .then(data => {
-        if (data.status === 'success') {
-          stockList.innerHTML = '';
-          for (const [item, qty] of Object.entries(data.stock)) {
-            const li = document.createElement('li');
-            li.textContent = `${item}: ${qty}`;
-            stockList.appendChild(li);
-          }
+    function selectMode(mode) {
+      document.getElementById("modeSelection").classList.add("hidden");
+      if (mode === "admin") {
+        const pass = prompt("Enter admin password:");
+        if (pass === "12345") {
+          document.getElementById("adminSection").classList.remove("hidden");
+          updateLiveStock();
         } else {
-          stockList.innerHTML = '<li>Error loading stock.</li>';
+          alert("Incorrect password.");
+          goBackToMain();
         }
-      })
-      .catch(() => {
-        stockList.innerHTML = '<li>Error loading stock.</li>';
-      });
-  }
-
-  // Load order history from backend
-  function loadOrderHistory() {
-    orderHistoryList.innerHTML = '<li>Loading...</li>';
-    fetch(SCRIPT_URL + '?history=true')
-      .then(r => r.json())
-      .then(data => {
-        if (data.status === 'success') {
-          orderHistoryList.innerHTML = '';
-          if (data.orders.length === 0) {
-            orderHistoryList.innerHTML = '<li>No orders found.</li>';
-            return;
-          }
-          data.orders.forEach(order => {
-            const li = document.createElement('li');
-            const timeStr = new Date(order.timestamp).toLocaleString();
-            let itemsText = order.items.map(i => `${i.item} x${i.quantity} (${i.price * i.quantity} THB)`).join(', ');
-            li.textContent = `${timeStr} - ${itemsText} | Total: ${order.totalPrice} THB`;
-            orderHistoryList.appendChild(li);
-          });
-        } else {
-          orderHistoryList.innerHTML = '<li>Error loading order history.</li>';
-        }
-      })
-      .catch(() => {
-        orderHistoryList.innerHTML = '<li>Error loading order history.</li>';
-      });
-  }
-
-  // Customer panel back button
-  customerBack.onclick = () => {
-    hide(customerPanel);
-    show(mainMenu);
-    clearCustomerForm();
-  };
-
-  // Customer form submit
-  orderForm.onsubmit = e => {
-    e.preventDefault();
-    const item = itemSelect.value;
-    const quantity = Number(quantityInput.value);
-    if (quantity <= 0) return;
-
-    currentOrders.push({
-      item,
-      quantity,
-      price: PRICES[item]
-    });
-    renderOrderSummary();
-    quantityInput.value = 1;
-    confirmOrderBtn.disabled = false;
-    customerResponse.textContent = '';
-  };
-
-  // Render customer order summary
-  function renderOrderSummary() {
-    orderSummaryList.innerHTML = '';
-    let total = 0;
-    currentOrders.forEach((order, idx) => {
-      total += order.price * order.quantity;
-      const li = document.createElement('li');
-      li.className = 'summary-item';
-      li.innerHTML = `
-        <span>${order.item} x${order.quantity} = ${order.price * order.quantity} THB</span>
-        <button data-index="${idx}">Delete</button>
-      `;
-      orderSummaryList.appendChild(li);
-    });
-    totalPriceDiv.textContent = `Total: ${total} THB`;
-  }
-
-  // Delete item from customer order summary
-  orderSummaryList.onclick = e => {
-    if (e.target.tagName === 'BUTTON') {
-      const idx = Number(e.target.dataset.index);
-      if (!isNaN(idx)) {
-        currentOrders.splice(idx, 1);
-        renderOrderSummary();
-        if (currentOrders.length === 0) confirmOrderBtn.disabled = true;
+      } else {
+        document.getElementById("customerSection").classList.remove("hidden");
       }
     }
-  };
 
-  // Confirm order button sends order to backend
-  confirmOrderBtn.onclick = () => {
-    if (currentOrders.length === 0) return;
+    function goBackToMain() {
+      document.getElementById("modeSelection").classList.remove("hidden");
+      document.getElementById("adminSection").classList.add("hidden");
+      document.getElementById("customerSection").classList.add("hidden");
+      document.getElementById("response").innerText = "";
+      document.getElementById("responseCustomer").innerText = "";
+      document.getElementById("order-list").innerHTML = "";
+      document.getElementById("total").innerText = "Total: 0฿";
+      order.length = 0;
+    }
 
-    const orderObj = {
-      items: currentOrders,
-      totalPrice: currentOrders.reduce((sum, o) => sum + o.price * o.quantity, 0)
-    };
+    function updateLiveStock() {
+      fetch(stockURL)
+        .then(res => res.json())
+        .then(data => {
+          const list = document.getElementById("stock-list");
+          list.innerHTML = '';
+          for (const item in data.stock) {
+            const li = document.createElement("li");
+            li.textContent = `${item}: ${data.stock[item]}`;
+            list.appendChild(li);
+          }
+        })
+        .catch(() => {
+          document.getElementById("stock-list").innerHTML = "<li>Failed to load stock.</li>";
+        });
+    }
 
-    fetch(`${SCRIPT_URL}?confirmOrder=true&order=${encodeURIComponent(JSON.stringify(orderObj))}`)
-      .then(r => r.json())
-      .then(data => {
-        if (data.status === 'success') {
-          customerResponse.style.color = 'green';
-          customerResponse.textContent = '✅ Order confirmed successfully!';
-          currentOrders = [];
-          renderOrderSummary();
-          confirmOrderBtn.disabled = true;
-        } else {
-          customerResponse.style.color = 'red';
-          customerResponse.textContent = '❌ Failed to confirm order.';
-        }
-      })
-      .catch(() => {
-        customerResponse.style.color = 'red';
-        customerResponse.textContent = '❌ Failed to confirm order.';
+    document.getElementById("adminForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const item = document.getElementById("item").value;
+      const quantity = document.getElementById("quantity").value;
+      const action = document.getElementById("action").value;
+      const url = `${stockURL}?item=${item}&action=${action}&quantity=${quantity}`;
+      fetch(url)
+        .then(res => res.json())
+        .then(() => {
+          document.getElementById("response").innerText = "✅ Submitted!";
+          updateLiveStock();
+        })
+        .catch(err => {
+          document.getElementById("response").innerText = "❌ Error: " + err;
+        });
+    });
+
+    document.getElementById("customerForm").addEventListener("submit", function (e) {
+      e.preventDefault();
+      const item = document.getElementById("c_item").value;
+      const quantity = parseInt(document.getElementById("c_quantity").value);
+      if (quantity < 1) return;
+      const existing = order.find(o => o.item === item);
+      if (existing) existing.quantity += quantity;
+      else order.push({ item, quantity });
+      renderOrder();
+    });
+
+    function renderOrder() {
+      const ul = document.getElementById("order-list");
+      ul.innerHTML = '';
+      let total = 0;
+      order.forEach((o, i) => {
+        const li = document.createElement("li");
+        const subtotal = o.quantity * prices[o.item];
+        li.textContent = `${o.item} x ${o.quantity} = ${subtotal}฿ `;
+        const delBtn = document.createElement("button");
+        delBtn.textContent = "❌";
+        delBtn.style.marginLeft = "10px";
+        delBtn.onclick = () => {
+          order.splice(i, 1);
+          renderOrder();
+        };
+        li.appendChild(delBtn);
+        ul.appendChild(li);
+        total += subtotal;
       });
-  };
+      document.getElementById("total").innerText = `Total: ${total}฿`;
+    }
 
-  function clearCustomerForm() {
-    currentOrders = [];
-    renderOrderSummary();
-    confirmOrderBtn.disabled = true;
-    customerResponse.textContent = '';
-  }
-</script>
-
+    function submitOrder() {
+      if (order.length === 0) return alert("No items to submit.");
+      const promises = order.map(o => {
+        const url = `${stockURL}?item=${o.item}&action=Remove&quantity=${o.quantity}`;
+        return fetch(url).then(res => res.json());
+      });
+      Promise.all(promises)
+        .then(() => {
+          document.getElementById("responseCustomer").innerText = "✅ Order Confirmed!";
+          order.length = 0;
+          renderOrder();
+        })
+        .catch(() => {
+          document.getElementById("responseCustomer").innerText = "❌ Error submitting order.";
+        });
+    }
+  </script>
 </body>
 </html>
