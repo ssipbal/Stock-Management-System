@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>NFC Smart Inventory Management System</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet" />
   <style>
     * { box-sizing: border-box; }
@@ -32,28 +32,7 @@
       margin-bottom: 20px;
       color: #2c3e50;
     }
-    button, input, select {
-      font-family: 'Sarabun', sans-serif;
-    }
-    /* Mode selection buttons */
-    #mode-selection button {
-      width: 45%;
-      margin: 0 5% 20px 5%;
-      padding: 15px;
-      font-size: 18px;
-      border-radius: 12px;
-      border: none;
-      cursor: pointer;
-      font-weight: 600;
-      background-color: #007acc;
-      color: white;
-      transition: background-color 0.3s ease;
-    }
-    #mode-selection button:hover {
-      background-color: #005fa3;
-    }
-    /* Forms and sections */
-    form label {
+    label {
       display: block;
       text-align: left;
       margin-top: 15px;
@@ -68,8 +47,9 @@
       border: 1px solid #ccc;
       border-radius: 8px;
       margin-bottom: 10px;
+      font-family: 'Sarabun', sans-serif;
     }
-    button.submit-btn {
+    button {
       width: 100%;
       padding: 12px;
       font-size: 16px;
@@ -80,17 +60,15 @@
       cursor: pointer;
       font-weight: 600;
       transition: background-color 0.3s ease;
-      margin-top: 10px;
     }
-    button.submit-btn:hover {
+    button:hover {
       background-color: #005fa3;
     }
-    #response {
+    #response, #responseCustomer, #responseAdmin {
       margin-top: 15px;
       font-size: 14px;
       font-weight: 500;
       color: green;
-      min-height: 18px;
     }
     #stock-list {
       padding-left: 0;
@@ -98,328 +76,268 @@
       text-align: left;
       font-size: 15px;
       margin-bottom: 20px;
-      max-height: 150px;
-      overflow-y: auto;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 10px;
     }
     #stock-list li {
       margin-bottom: 4px;
     }
-    /* Summary for customer */
-    #summary-list {
-      padding-left: 0;
-      list-style: none;
-      text-align: left;
-      font-size: 15px;
+    #modeSelect {
       margin-bottom: 20px;
-      max-height: 150px;
-      overflow-y: auto;
+    }
+    #adminSection, #customerSection, #passwordSection {
+      display: none;
+    }
+    #purchaseSummary {
+      text-align: left;
+      margin-top: 15px;
       border: 1px solid #ccc;
       border-radius: 8px;
       padding: 10px;
-    }
-    #summary-list li {
-      margin-bottom: 4px;
-    }
-    @media (max-width: 500px) {
-      .container {
-        padding: 20px;
-      }
-      h1 {
-        font-size: 20px;
-      }
-      #mode-selection button {
-        width: 100%;
-        margin: 0 0 15px 0;
-      }
+      max-height: 150px;
+      overflow-y: auto;
+      font-size: 15px;
     }
   </style>
 </head>
 <body>
   <div class="container">
-
     <h1>NFC Smart Inventory Management System</h1>
 
-    <!-- Mode Selection -->
-    <div id="mode-selection">
-      <button id="btn-customer">Customer</button>
-      <button id="btn-admin">Admin</button>
+    <div id="modeSelect">
+      <button id="btnCustomer">Customer</button>
+      <button id="btnAdmin">Admin</button>
     </div>
 
-    <!-- Admin password prompt -->
-    <div id="admin-login" style="display:none;">
-      <label for="admin-password">Enter Admin Password</label>
-      <input type="password" id="admin-password" placeholder="Password" />
-      <button id="admin-login-btn" class="submit-btn">Login</button>
-      <p id="admin-login-response" style="color:red; min-height: 18px;"></p>
+    <!-- Admin Password Entry -->
+    <div id="passwordSection">
+      <label for="adminPassword">Enter Admin Password</label>
+      <input type="password" id="adminPassword" />
+      <button id="adminLoginBtn">Login</button>
+      <p id="responseAdmin" style="color: red;"></p>
     </div>
 
-    <!-- Admin form -->
-    <div id="admin-section" style="display:none;">
+    <!-- Admin Section (old code) -->
+    <div id="adminSection">
       <h3>Current Stock</h3>
       <ul id="stock-list"><li>Loading...</li></ul>
-
-      <form id="adminForm">
-        <label for="item-admin">Item</label>
-        <select id="item-admin" name="item" required>
+      <form id="stockFormAdmin">
+        <label for="itemAdmin">Item</label>
+        <select id="itemAdmin" name="itemAdmin" required>
           <option value="Cookie">Cookie</option>
           <option value="Brownie">Brownie</option>
           <option value="Macaron">Macaron</option>
         </select>
 
-        <label for="quantity-admin">Quantity</label>
-        <input type="number" id="quantity-admin" name="quantity" min="1" required />
+        <label for="quantityAdmin">Quantity</label>
+        <input type="number" id="quantityAdmin" name="quantityAdmin" min="1" required />
 
-        <label for="action-admin">Action</label>
-        <select id="action-admin" name="action" required>
+        <label for="actionAdmin">Action</label>
+        <select id="actionAdmin" name="actionAdmin" required>
           <option value="Add">Add</option>
           <option value="Remove">Remove</option>
         </select>
 
-        <button type="submit" class="submit-btn">Submit</button>
+        <button type="submit">Submit</button>
       </form>
-
-      <p id="response-admin"></p>
+      <p id="responseAdminSuccess" style="color: green;"></p>
     </div>
 
-    <!-- Customer form WITHOUT stock display -->
-    <div id="customer-section" style="display:none;">
-      <form id="customerForm">
-        <label for="item-customer">Item</label>
-        <select id="item-customer" name="item" required>
+    <!-- Customer Section -->
+    <div id="customerSection">
+      <form id="stockFormCustomer">
+        <label for="itemCustomer">Item</label>
+        <select id="itemCustomer" name="itemCustomer" required>
           <option value="Cookie">Cookie</option>
           <option value="Brownie">Brownie</option>
           <option value="Macaron">Macaron</option>
         </select>
 
-        <label for="quantity-customer">Quantity</label>
-        <input type="number" id="quantity-customer" name="quantity" min="1" required />
+        <label for="quantityCustomer">Quantity</label>
+        <input type="number" id="quantityCustomer" name="quantityCustomer" min="1" required />
 
-        <button type="button" id="add-to-summary" class="submit-btn">Add to Summary</button>
+        <button type="button" id="addToSummaryBtn">Add to Summary</button>
       </form>
 
-      <h3>Purchase Summary</h3>
-      <ul id="summary-list"><li>No items added.</li></ul>
-      <button id="confirm-purchase" class="submit-btn" disabled>Confirm Purchase</button>
-
-      <p id="response-customer"></p>
+      <div id="purchaseSummaryContainer">
+        <h3>Purchase Summary</h3>
+        <div id="purchaseSummary">No items added.</div>
+        <button id="confirmPurchaseBtn" style="margin-top:10px;">Confirm Purchase</button>
+        <p id="responseCustomer"></p>
+      </div>
     </div>
-
   </div>
 
   <script>
     const stockURL = 'https://script.google.com/macros/s/AKfycbxOSlRFifSy6sP5Vb9qOGzLQG4FngeEJkaNCnHjl71bTER196WcNWfMZXuRr_LVmKdu/exec';
 
     // Elements
-    const modeSelection = document.getElementById('mode-selection');
-    const btnCustomer = document.getElementById('btn-customer');
-    const btnAdmin = document.getElementById('btn-admin');
+    const modeSelect = document.getElementById('modeSelect');
+    const btnCustomer = document.getElementById('btnCustomer');
+    const btnAdmin = document.getElementById('btnAdmin');
 
-    const adminLogin = document.getElementById('admin-login');
-    const adminPasswordInput = document.getElementById('admin-password');
-    const adminLoginBtn = document.getElementById('admin-login-btn');
-    const adminLoginResponse = document.getElementById('admin-login-response');
+    const passwordSection = document.getElementById('passwordSection');
+    const adminPasswordInput = document.getElementById('adminPassword');
+    const adminLoginBtn = document.getElementById('adminLoginBtn');
+    const responseAdmin = document.getElementById('responseAdmin');
 
-    const adminSection = document.getElementById('admin-section');
-    const adminForm = document.getElementById('adminForm');
-    const responseAdmin = document.getElementById('response-admin');
-    const stockListAdmin = document.getElementById('stock-list');
+    const adminSection = document.getElementById('adminSection');
+    const stockList = document.getElementById('stock-list');
+    const stockFormAdmin = document.getElementById('stockFormAdmin');
+    const itemAdmin = document.getElementById('itemAdmin');
+    const quantityAdmin = document.getElementById('quantityAdmin');
+    const actionAdmin = document.getElementById('actionAdmin');
+    const responseAdminSuccess = document.getElementById('responseAdminSuccess');
 
-    const customerSection = document.getElementById('customer-section');
-    const customerForm = document.getElementById('customerForm');
-    const summaryList = document.getElementById('summary-list');
-    const addToSummaryBtn = document.getElementById('add-to-summary');
-    const confirmPurchaseBtn = document.getElementById('confirm-purchase');
-    const responseCustomer = document.getElementById('response-customer');
+    const customerSection = document.getElementById('customerSection');
+    const stockFormCustomer = document.getElementById('stockFormCustomer');
+    const itemCustomer = document.getElementById('itemCustomer');
+    const quantityCustomer = document.getElementById('quantityCustomer');
+    const addToSummaryBtn = document.getElementById('addToSummaryBtn');
+    const purchaseSummaryDiv = document.getElementById('purchaseSummary');
+    const confirmPurchaseBtn = document.getElementById('confirmPurchaseBtn');
+    const responseCustomer = document.getElementById('responseCustomer');
 
-    // Data for customer purchase summary
-    let purchaseSummary = {};
+    // Initial state
+    adminSection.style.display = 'none';
+    customerSection.style.display = 'none';
+    passwordSection.style.display = 'none';
 
-    // Password for admin
-    const ADMIN_PASSWORD = '12345';
+    let purchaseSummary = {};  // {itemName: quantity}
 
-    // Show stock in a given list element
-    function displayStock(listElement, stockData) {
-      listElement.innerHTML = '';
-      for (const item in stockData) {
-        const li = document.createElement('li');
-        li.textContent = `${item}: ${stockData[item]}`;
-        listElement.appendChild(li);
+    // Show/hide sections on mode selection
+    btnCustomer.addEventListener('click', () => {
+      modeSelect.style.display = 'none';
+      customerSection.style.display = 'block';
+    });
+
+    btnAdmin.addEventListener('click', () => {
+      modeSelect.style.display = 'none';
+      passwordSection.style.display = 'block';
+      adminPasswordInput.focus();
+    });
+
+    // Admin login check
+    adminLoginBtn.addEventListener('click', () => {
+      const pass = adminPasswordInput.value;
+      if (pass === '12345') {
+        passwordSection.style.display = 'none';
+        adminSection.style.display = 'block';
+        responseAdmin.textContent = '';
+        loadStockAdmin();
+      } else {
+        responseAdmin.textContent = 'Incorrect password.';
       }
-    }
+    });
 
-    // Fetch stock data from backend
-    function fetchStock(listElement) {
+    // Admin - Load current stock and display
+    function loadStockAdmin() {
       fetch(stockURL)
         .then(res => {
-          if (!res.ok) throw new Error('Failed to fetch stock');
+          if (!res.ok) throw new Error('Failed to load stock');
           return res.json();
         })
         .then(data => {
-          if (data.status === 'success') {
-            displayStock(listElement, data.stock);
-          } else {
-            listElement.innerHTML = '<li>Failed to load stock data</li>';
+          stockList.innerHTML = '';
+          for (const item in data) {
+            const li = document.createElement('li');
+            li.textContent = `${item}: ${data[item]}`;
+            stockList.appendChild(li);
           }
         })
         .catch(err => {
-          listElement.innerHTML = '<li>Error loading stock</li>';
+          stockList.innerHTML = '<li>Failed to load stock.</li>';
           console.error(err);
         });
     }
 
-    // Initial setup
-    function showModeSelection() {
-      modeSelection.style.display = 'block';
-      adminLogin.style.display = 'none';
-      adminSection.style.display = 'none';
-      customerSection.style.display = 'none';
-      responseAdmin.innerText = '';
-      responseCustomer.innerText = '';
-      purchaseSummary = {};
-      updateSummaryUI();
-    }
-
-    // Show admin login prompt
-    function showAdminLogin() {
-      modeSelection.style.display = 'none';
-      adminLogin.style.display = 'block';
-      adminPasswordInput.value = '';
-      adminLoginResponse.innerText = '';
-    }
-
-    // Show admin interface
-    function showAdminSection() {
-      modeSelection.style.display = 'none';
-      adminLogin.style.display = 'none';
-      adminSection.style.display = 'block';
-      responseAdmin.innerText = '';
-      fetchStock(stockListAdmin);
-    }
-
-    // Show customer interface
-    function showCustomerSection() {
-      modeSelection.style.display = 'none';
-      adminLogin.style.display = 'none';
-      adminSection.style.display = 'none';
-      customerSection.style.display = 'block';
-      responseCustomer.innerText = '';
-      // No stock fetch here because customer does not see stock
-    }
-
-    // Update purchase summary UI for customer
-    function updateSummaryUI() {
-      summaryList.innerHTML = '';
-      const keys = Object.keys(purchaseSummary);
-      if (keys.length === 0) {
-        summaryList.innerHTML = '<li>No items added.</li>';
-        confirmPurchaseBtn.disabled = true;
-        return;
-      }
-      keys.forEach(item => {
-        const li = document.createElement('li');
-        li.textContent = `${item}: ${purchaseSummary[item]}`;
-        summaryList.appendChild(li);
-      });
-      confirmPurchaseBtn.disabled = false;
-    }
-
-    // Event listeners
-
-    btnAdmin.addEventListener('click', () => {
-      showAdminLogin();
-    });
-
-    btnCustomer.addEventListener('click', () => {
-      showCustomerSection();
-    });
-
-    adminLoginBtn.addEventListener('click', () => {
-      const pass = adminPasswordInput.value.trim();
-      if (pass === ADMIN_PASSWORD) {
-        showAdminSection();
-      } else {
-        adminLoginResponse.innerText = 'Incorrect password!';
-      }
-    });
-
-    // Admin form submit (add/remove stock)
-    adminForm.addEventListener('submit', (e) => {
+    // Admin - Submit add/remove stock
+    stockFormAdmin.addEventListener('submit', e => {
       e.preventDefault();
-      const item = document.getElementById('item-admin').value;
-      const quantity = document.getElementById('quantity-admin').value;
-      const action = document.getElementById('action-admin').value;
+      const item = itemAdmin.value;
+      const quantity = quantityAdmin.value;
+      const action = actionAdmin.value;
 
       const url = `${stockURL}?item=${encodeURIComponent(item)}&action=${encodeURIComponent(action)}&quantity=${encodeURIComponent(quantity)}`;
 
       fetch(url)
         .then(res => {
-          if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+          if (!res.ok) throw new Error('Failed to update stock');
           return res.json();
         })
         .then(data => {
-          responseAdmin.innerText = '✅ Submitted successfully!';
-          fetchStock(stockListAdmin);
-          adminForm.reset();
+          responseAdminSuccess.textContent = '✅ Stock updated successfully!';
+          loadStockAdmin();
+          stockFormAdmin.reset();
         })
         .catch(err => {
-          responseAdmin.innerText = '❌ Error submitting: ' + err;
+          responseAdminSuccess.textContent = '❌ Error updating stock.';
           console.error(err);
         });
     });
 
-    // Customer add to summary
+    // Customer - Add item to purchase summary
     addToSummaryBtn.addEventListener('click', () => {
-      const item = document.getElementById('item-customer').value;
-      const quantityStr = document.getElementById('quantity-customer').value;
-      const quantity = Number(quantityStr);
-      if (!quantity || quantity <= 0) {
-        responseCustomer.innerText = 'Please enter a valid quantity';
+      const item = itemCustomer.value;
+      const quantity = parseInt(quantityCustomer.value, 10);
+      if (quantity <= 0 || isNaN(quantity)) {
+        alert('Please enter a valid quantity.');
         return;
       }
-      responseCustomer.innerText = '';
+
       if (purchaseSummary[item]) {
         purchaseSummary[item] += quantity;
       } else {
         purchaseSummary[item] = quantity;
       }
+
+      quantityCustomer.value = '';
       updateSummaryUI();
-      customerForm.reset();
+      responseCustomer.textContent = '';
     });
 
-    // Customer confirm purchase (deduct stock)
-    confirmPurchaseBtn.addEventListener('click', () => {
+    // Update the purchase summary display
+    function updateSummaryUI() {
+      if (Object.keys(purchaseSummary).length === 0) {
+        purchaseSummaryDiv.textContent = 'No items added.';
+        return;
+      }
+      purchaseSummaryDiv.innerHTML = '';
+      for (const [item, qty] of Object.entries(purchaseSummary)) {
+        const div = document.createElement('div');
+        div.textContent = `${item}: ${qty}`;
+        purchaseSummaryDiv.appendChild(div);
+      }
+    }
+
+    // Customer - Confirm purchase: send sequential remove requests
+    confirmPurchaseBtn.addEventListener('click', async () => {
       const items = Object.entries(purchaseSummary);
-      if (items.length === 0) return;
+      if (items.length === 0) {
+        alert('No items in purchase summary.');
+        return;
+      }
 
-      responseCustomer.innerText = 'Processing purchase...';
+      responseCustomer.textContent = 'Processing purchase...';
+      confirmPurchaseBtn.disabled = true;
+      addToSummaryBtn.disabled = true;
 
-      // Create an array of fetch promises to deduct each item quantity
-      const fetches = items.map(([item, qty]) => {
-        const url = `${stockURL}?item=${encodeURIComponent(item)}&action=Remove&quantity=${encodeURIComponent(qty)}`;
-        return fetch(url).then(res => {
+      try {
+        for (const [item, qty] of items) {
+          const url = `${stockURL}?item=${encodeURIComponent(item)}&action=Remove&quantity=${encodeURIComponent(qty)}`;
+          const res = await fetch(url);
           if (!res.ok) throw new Error(`Failed to update ${item}`);
-          return res.json();
-        });
-      });
+          await res.json();
+        }
+        responseCustomer.textContent = '✅ Purchase completed successfully!';
+        purchaseSummary = {};
+        updateSummaryUI();
+      } catch (err) {
+        responseCustomer.textContent = '❌ Error during purchase: ' + err.message;
+        console.error(err);
+      }
 
-      Promise.all(fetches)
-        .then(results => {
-          responseCustomer.innerText = '✅ Purchase completed successfully!';
-          purchaseSummary = {};
-          updateSummaryUI();
-          // no stock refresh needed here since customer does not see stock
-        })
-        .catch(err => {
-          responseCustomer.innerText = '❌ Error during purchase: ' + err;
-          console.error(err);
-        });
+      confirmPurchaseBtn.disabled = false;
+      addToSummaryBtn.disabled = false;
     });
-
-    // On page load show mode selection
-    showModeSelection();
   </script>
 </body>
 </html>
