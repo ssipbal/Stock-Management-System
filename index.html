@@ -79,58 +79,51 @@
       font-weight: bold;
       margin-top: 10px;
     }
-
-    /* Receipt Popup Styles */
-    #receiptPopup {
+    /* Popup styles */
+    #receipt-popup {
       position: fixed;
-      top: 50%;
-      left: 50%;
+      top: 50%; left: 50%;
       transform: translate(-50%, -50%);
       background: white;
-      padding: 20px 30px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+      padding: 20px;
       border-radius: 12px;
-      box-shadow: 0 8px 20px rgba(0,0,0,0.25);
       max-width: 350px;
       width: 90%;
-      z-index: 9999;
+      z-index: 1000;
       display: none;
-      text-align: left;
     }
-    #receiptPopup h3 {
+    #receipt-popup h3 {
       margin-top: 0;
-      margin-bottom: 15px;
-      text-align: center;
-    }
-    #receiptPopup ul {
-      list-style: none;
-      padding-left: 0;
-      margin-bottom: 15px;
-    }
-    #receiptPopup ul li {
-      margin-bottom: 6px;
-      font-size: 16px;
-    }
-    #receiptPopup .close-btn {
-      position: absolute;
-      top: 10px;
-      right: 15px;
-      font-size: 20px;
-      font-weight: bold;
-      cursor: pointer;
-      color: #333;
-    }
-    #receiptPopup #receiptTotal {
-      font-weight: bold;
-      font-size: 18px;
       margin-bottom: 10px;
-      text-align: right;
     }
-    #receiptPopup #receiptTime {
-      font-size: 14px;
+    #receipt-list {
+      text-align: left;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-bottom: 10px;
+    }
+    #receipt-list li {
+      margin-bottom: 6px;
+    }
+    #receipt-total {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    #receipt-timestamp {
+      font-size: 0.9em;
       color: #666;
-      text-align: center;
+      margin-bottom: 20px;
     }
-
+    #close-receipt-btn {
+      background: #e74c3c;
+      border: none;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
   </style>
 </head>
 <body>
@@ -198,12 +191,12 @@
   </div>
 
   <!-- Receipt Popup -->
-  <div id="receiptPopup">
-    <span class="close-btn" onclick="closeReceipt()">×</span>
+  <div id="receipt-popup">
     <h3>Order Receipt</h3>
-    <ul id="receiptItems"></ul>
-    <div id="receiptTotal"></div>
-    <div id="receiptTime"></div>
+    <ul id="receipt-list"></ul>
+    <div id="receipt-total"></div>
+    <div id="receipt-timestamp"></div>
+    <button id="close-receipt-btn">Close ✖</button>
   </div>
 
   <script>
@@ -236,7 +229,7 @@
       document.getElementById("order-list").innerHTML = "";
       document.getElementById("total").innerText = "Total: 0฿";
       order.length = 0;
-      closeReceipt();
+      hideReceiptPopup();
     }
 
     function updateLiveStock() {
@@ -261,7 +254,7 @@
       const item = document.getElementById("item").value;
       const quantity = document.getElementById("quantity").value;
       const action = document.getElementById("action").value;
-      const url = `${stockURL}?item=${item}&action=${action}&quantity=${quantity}`;
+      const url = `${stockURL}?item=${encodeURIComponent(item)}&action=${encodeURIComponent(action)}&quantity=${encodeURIComponent(quantity)}`;
       fetch(url)
         .then(res => res.json())
         .then(() => {
@@ -308,47 +301,66 @@
 
     function submitOrder() {
       if (order.length === 0) return alert("No items to submit.");
+
+      // Show receipt popup before clearing order
+      showReceipt(order);
+
+      // Send all update requests
       const promises = order.map(o => {
-        const url = `${stockURL}?item=${o.item}&action=Remove&quantity=${o.quantity}`;
-        return fetch(url).then(res => res.json());
+        const url = `${stockURL}?item=${encodeURIComponent(o.item)}&action=Remove&quantity=${encodeURIComponent(o.quantity)}`;
+        return fetch(url)
+          .then(res => {
+            if (!res.ok) throw new Error(`Failed to update ${o.item}`);
+            return res.json();
+          })
+          .catch(err => {
+            console.error(err);
+            return null;
+          });
       });
-      Promise.all(promises)
-        .then(() => {
-          showReceipt();
+
+      Promise.all(promises).then(results => {
+        const failedUpdates = results.filter(r => r === null);
+        if (failedUpdates.length > 0) {
+          document.getElementById("responseCustomer").innerText = "❌ Some items failed to update. Please try again.";
+        } else {
+          document.getElementById("responseCustomer").innerText = "✅ Order Confirmed!";
           order.length = 0;
           renderOrder();
-          document.getElementById("responseCustomer").innerText = "✅ Order Confirmed!";
-        })
-        .catch(() => {
-          document.getElementById("responseCustomer").innerText = "❌ Error submitting order.";
-        });
+          updateLiveStock();
+        }
+      });
     }
 
-    // Receipt popup functions
-    function showReceipt() {
-      const receipt = document.getElementById("receiptPopup");
-      const receiptItems = document.getElementById("receiptItems");
-      const receiptTotal = document.getElementById("receiptTotal");
-      const receiptTime = document.getElementById("receiptTime");
+    // Receipt popup handlers
+    const receiptPopup = document.getElementById('receipt-popup');
+    const receiptList = document.getElementById('receipt-list');
+    const receiptTotal = document.getElementById('receipt-total');
+    const receiptTimestamp = document.getElementById('receipt-timestamp');
+    const closeReceiptBtn = document.getElementById('close-receipt-btn');
 
-      receiptItems.innerHTML = '';
+    function showReceipt(orderArr) {
+      receiptList.innerHTML = '';
       let total = 0;
-      order.forEach(o => {
-        const li = document.createElement("li");
+      orderArr.forEach(o => {
+        const li = document.createElement('li');
         const subtotal = o.quantity * prices[o.item];
         li.textContent = `${o.item} x ${o.quantity} = ${subtotal}฿`;
-        receiptItems.appendChild(li);
+        receiptList.appendChild(li);
         total += subtotal;
       });
       receiptTotal.textContent = `Total: ${total}฿`;
-      receiptTime.textContent = `Time: ${new Date().toLocaleString()}`;
-
-      receipt.style.display = "block";
+      const now = new Date();
+      receiptTimestamp.textContent = `Time: ${now.toLocaleString()}`;
+      receiptPopup.style.display = 'block';
     }
 
-    function closeReceipt() {
-      document.getElementById("receiptPopup").style.display = "none";
+    function hideReceiptPopup() {
+      receiptPopup.style.display = 'none';
     }
+
+    closeReceiptBtn.onclick = hideReceiptPopup;
+
   </script>
 </body>
 </html>
