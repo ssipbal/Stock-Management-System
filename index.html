@@ -79,6 +79,66 @@
       font-weight: bold;
       margin-top: 10px;
     }
+
+    /* Popup Styles */
+    #popupReceipt {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.6);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    #popupContent {
+      background: #fff;
+      padding: 30px;
+      border-radius: 16px;
+      width: 90%;
+      max-width: 400px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      text-align: left;
+      position: relative;
+    }
+
+    #popupContent h3 {
+      margin-top: 0;
+      color: #2c3e50;
+    }
+
+    #popupClose {
+      position: absolute;
+      top: 10px;
+      right: 15px;
+      font-size: 20px;
+      cursor: pointer;
+      font-weight: bold;
+      color: #c00;
+    }
+
+    #popupOrderList {
+      margin-top: 10px;
+      padding-left: 20px;
+    }
+
+    #popupOrderList li {
+      margin-bottom: 6px;
+    }
+
+    #popupTime {
+      font-size: 14px;
+      margin-bottom: 10px;
+      color: #555;
+    }
+
+    #popupTotal {
+      font-size: 18px;
+      font-weight: bold;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -142,6 +202,17 @@
 
       <p id="responseCustomer"></p>
       <button onclick="goBackToMain()">🔙 Back to Main</button>
+    </div>
+  </div>
+
+  <!-- Popup Receipt -->
+  <div id="popupReceipt">
+    <div id="popupContent">
+      <span id="popupClose" onclick="closePopup()">❌</span>
+      <h3>🧾 Order Receipt</h3>
+      <div id="popupTime"></div>
+      <ul id="popupOrderList"></ul>
+      <div id="popupTotal"></div>
     </div>
   </div>
 
@@ -246,7 +317,6 @@
 
     async function submitOrder() {
       if (order.length === 0) return alert("No items to submit.");
-
       document.getElementById("responseCustomer").innerText = "⏳ Processing order...";
 
       try {
@@ -257,6 +327,10 @@
           const data = await res.json();
           if (data.status === 'error') throw new Error(`Error updating ${o.item}: ${data.message || 'Unknown error'}`);
         }
+
+        // Show popup receipt
+        showPopupReceipt(order);
+
         document.getElementById("responseCustomer").innerText = "✅ Order Confirmed!";
         order.length = 0;
         renderOrder();
@@ -264,6 +338,29 @@
         document.getElementById("responseCustomer").innerText = "❌ Error submitting order. Try again.";
         console.error(error);
       }
+    }
+
+    function showPopupReceipt(order) {
+      const now = new Date().toLocaleString();
+      document.getElementById("popupTime").textContent = `🕒 ${now}`;
+      const ul = document.getElementById("popupOrderList");
+      ul.innerHTML = '';
+      let total = 0;
+
+      order.forEach(o => {
+        const li = document.createElement("li");
+        const subtotal = o.quantity * prices[o.item];
+        li.textContent = `${o.item} x ${o.quantity} = ${subtotal}฿`;
+        ul.appendChild(li);
+        total += subtotal;
+      });
+
+      document.getElementById("popupTotal").textContent = `Total: ${total}฿`;
+      document.getElementById("popupReceipt").style.display = "flex";
+    }
+
+    function closePopup() {
+      document.getElementById("popupReceipt").style.display = "none";
     }
   </script>
 </body>
