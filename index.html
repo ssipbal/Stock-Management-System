@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>NFC Smart Inventory Management System</title>
+  <title>NFC Smart Inventory</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet" />
   <style>
@@ -21,322 +21,249 @@
     .container {
       background: white;
       border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-      max-width: 420px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      max-width: 450px;
       width: 100%;
       padding: 30px;
       text-align: center;
     }
-    h1 {
-      font-size: 24px;
-      margin-bottom: 20px;
+    h1, h2 {
       color: #2c3e50;
     }
     label {
-      display: block;
       text-align: left;
+      display: block;
       margin-top: 15px;
       margin-bottom: 5px;
       font-weight: 600;
-      font-size: 14px;
     }
-    input, select {
+    input, select, button {
       width: 100%;
       padding: 10px;
       font-size: 16px;
-      border: 1px solid #ccc;
       border-radius: 8px;
+      border: 1px solid #ccc;
       margin-bottom: 10px;
       font-family: 'Sarabun', sans-serif;
     }
     button {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
       background-color: #007acc;
       color: white;
       border: none;
-      border-radius: 8px;
-      cursor: pointer;
       font-weight: 600;
+      cursor: pointer;
       transition: background-color 0.3s ease;
     }
-    button:hover {
-      background-color: #005fa3;
-    }
-    #response, #responseCustomer, #responseAdmin {
-      margin-top: 15px;
-      font-size: 14px;
-      font-weight: 500;
-      color: green;
-    }
-    #stock-list {
-      padding-left: 0;
+    button:hover { background-color: #005fa3; }
+    .hidden { display: none; }
+    #stock-list { text-align: left; list-style: none; padding: 0; }
+    #stock-list li { margin-bottom: 4px; }
+    #purchaseSummary ul {
       list-style: none;
+      padding-left: 0;
       text-align: left;
-      font-size: 15px;
-      margin-bottom: 20px;
     }
-    #stock-list li {
-      margin-bottom: 4px;
+    .summary-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
     }
-    #modeSelect {
-      margin-bottom: 20px;
+    .summary-item button {
+      width: auto;
+      padding: 5px 10px;
+      font-size: 12px;
+      background-color: #e74c3c;
     }
-    #adminSection, #customerSection, #passwordSection {
-      display: none;
-    }
-    #purchaseSummary {
-      text-align: left;
-      margin-top: 15px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      padding: 10px;
-      max-height: 150px;
-      overflow-y: auto;
-      font-size: 15px;
+    .summary-item button:hover {
+      background-color: #c0392b;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <h1>NFC Smart Inventory Management System</h1>
+    <h1>NFC Smart Inventory</h1>
 
-    <div id="modeSelect">
-      <button id="btnCustomer">Customer</button>
-      <button id="btnAdmin">Admin</button>
+    <!-- Mode Selection -->
+    <div id="modeSelection">
+      <button onclick="enterCustomer()">Customer</button>
+      <button onclick="promptAdmin()">Admin</button>
     </div>
 
-    <!-- Admin Password Entry -->
-    <div id="passwordSection">
-      <label for="adminPassword">Enter Admin Password</label>
-      <input type="password" id="adminPassword" />
-      <button id="adminLoginBtn">Login</button>
-      <p id="responseAdmin" style="color: red;"></p>
-    </div>
+    <!-- Admin Section -->
+    <div id="adminSection" class="hidden">
+      <h2>Admin Mode</h2>
+      <div>
+        <h3>Current Stock</h3>
+        <ul id="stock-list"><li>Loading...</li></ul>
+      </div>
 
-    <!-- Admin Section (old code) -->
-    <div id="adminSection">
-      <h3>Current Stock</h3>
-      <ul id="stock-list"><li>Loading...</li></ul>
-      <form id="stockFormAdmin">
-        <label for="itemAdmin">Item</label>
-        <select id="itemAdmin" name="itemAdmin" required>
+      <form id="stockForm">
+        <label for="item">Item</label>
+        <select id="item">
           <option value="Cookie">Cookie</option>
           <option value="Brownie">Brownie</option>
           <option value="Macaron">Macaron</option>
         </select>
 
-        <label for="quantityAdmin">Quantity</label>
-        <input type="number" id="quantityAdmin" name="quantityAdmin" min="1" required />
+        <label for="quantity">Quantity</label>
+        <input type="number" id="quantity" min="1" required>
 
-        <label for="actionAdmin">Action</label>
-        <select id="actionAdmin" name="actionAdmin" required>
+        <label for="action">Action</label>
+        <select id="action">
           <option value="Add">Add</option>
           <option value="Remove">Remove</option>
         </select>
 
         <button type="submit">Submit</button>
+        <p id="response"></p>
       </form>
-      <p id="responseAdminSuccess" style="color: green;"></p>
     </div>
 
     <!-- Customer Section -->
-    <div id="customerSection">
+    <div id="customerSection" class="hidden">
+      <h2>Customer Mode</h2>
       <form id="stockFormCustomer">
         <label for="itemCustomer">Item</label>
-        <select id="itemCustomer" name="itemCustomer" required>
-          <option value="Cookie">Cookie</option>
-          <option value="Brownie">Brownie</option>
-          <option value="Macaron">Macaron</option>
+        <select id="itemCustomer">
+          <option value="Cookie">Cookie - 15฿</option>
+          <option value="Brownie">Brownie - 20฿</option>
+          <option value="Macaron">Macaron - 35฿</option>
         </select>
 
         <label for="quantityCustomer">Quantity</label>
-        <input type="number" id="quantityCustomer" name="quantityCustomer" min="1" required />
+        <input type="number" id="quantityCustomer" min="1" required>
 
         <button type="button" id="addToSummaryBtn">Add to Summary</button>
       </form>
 
-      <div id="purchaseSummaryContainer">
-        <h3>Purchase Summary</h3>
-        <div id="purchaseSummary">No items added.</div>
-        <button id="confirmPurchaseBtn" style="margin-top:10px;">Confirm Purchase</button>
-        <p id="responseCustomer"></p>
-      </div>
+      <div id="purchaseSummary">No items added.</div>
+      <button id="confirmPurchaseBtn">Confirm Purchase</button>
+      <p id="responseCustomer"></p>
     </div>
   </div>
 
   <script>
     const stockURL = 'https://script.google.com/macros/s/AKfycbxOSlRFifSy6sP5Vb9qOGzLQG4FngeEJkaNCnHjl71bTER196WcNWfMZXuRr_LVmKdu/exec';
+    const prices = { Cookie: 15, Brownie: 20, Macaron: 35 };
+    let purchaseSummary = {};
 
-    // Elements
-    const modeSelect = document.getElementById('modeSelect');
-    const btnCustomer = document.getElementById('btnCustomer');
-    const btnAdmin = document.getElementById('btnAdmin');
+    function show(id) {
+      document.getElementById("modeSelection").classList.add("hidden");
+      document.getElementById("adminSection").classList.add("hidden");
+      document.getElementById("customerSection").classList.add("hidden");
+      document.getElementById(id).classList.remove("hidden");
+    }
 
-    const passwordSection = document.getElementById('passwordSection');
-    const adminPasswordInput = document.getElementById('adminPassword');
-    const adminLoginBtn = document.getElementById('adminLoginBtn');
-    const responseAdmin = document.getElementById('responseAdmin');
-
-    const adminSection = document.getElementById('adminSection');
-    const stockList = document.getElementById('stock-list');
-    const stockFormAdmin = document.getElementById('stockFormAdmin');
-    const itemAdmin = document.getElementById('itemAdmin');
-    const quantityAdmin = document.getElementById('quantityAdmin');
-    const actionAdmin = document.getElementById('actionAdmin');
-    const responseAdminSuccess = document.getElementById('responseAdminSuccess');
-
-    const customerSection = document.getElementById('customerSection');
-    const stockFormCustomer = document.getElementById('stockFormCustomer');
-    const itemCustomer = document.getElementById('itemCustomer');
-    const quantityCustomer = document.getElementById('quantityCustomer');
-    const addToSummaryBtn = document.getElementById('addToSummaryBtn');
-    const purchaseSummaryDiv = document.getElementById('purchaseSummary');
-    const confirmPurchaseBtn = document.getElementById('confirmPurchaseBtn');
-    const responseCustomer = document.getElementById('responseCustomer');
-
-    // Initial state
-    adminSection.style.display = 'none';
-    customerSection.style.display = 'none';
-    passwordSection.style.display = 'none';
-
-    let purchaseSummary = {};  // {itemName: quantity}
-
-    // Show/hide sections on mode selection
-    btnCustomer.addEventListener('click', () => {
-      modeSelect.style.display = 'none';
-      customerSection.style.display = 'block';
-    });
-
-    btnAdmin.addEventListener('click', () => {
-      modeSelect.style.display = 'none';
-      passwordSection.style.display = 'block';
-      adminPasswordInput.focus();
-    });
-
-    // Admin login check
-    adminLoginBtn.addEventListener('click', () => {
-      const pass = adminPasswordInput.value;
-      if (pass === '12345') {
-        passwordSection.style.display = 'none';
-        adminSection.style.display = 'block';
-        responseAdmin.textContent = '';
-        loadStockAdmin();
+    function promptAdmin() {
+      const pass = prompt("Enter admin password:");
+      if (pass === "12345") {
+        show("adminSection");
+        updateLiveStock();
       } else {
-        responseAdmin.textContent = 'Incorrect password.';
+        alert("Incorrect password.");
       }
-    });
+    }
 
-    // Admin - Load current stock and display
-    function loadStockAdmin() {
+    function enterCustomer() {
+      show("customerSection");
+    }
+
+    // Admin
+    function updateLiveStock() {
       fetch(stockURL)
-        .then(res => {
-          if (!res.ok) throw new Error('Failed to load stock');
-          return res.json();
-        })
+        .then(res => res.json())
         .then(data => {
-          stockList.innerHTML = '';
+          const list = document.getElementById("stock-list");
+          list.innerHTML = '';
           for (const item in data) {
-            const li = document.createElement('li');
+            const li = document.createElement("li");
             li.textContent = `${item}: ${data[item]}`;
-            stockList.appendChild(li);
+            list.appendChild(li);
           }
         })
-        .catch(err => {
-          stockList.innerHTML = '<li>Failed to load stock.</li>';
-          console.error(err);
+        .catch(() => {
+          document.getElementById("stock-list").innerHTML = "<li>Failed to load stock.</li>";
         });
     }
 
-    // Admin - Submit add/remove stock
-    stockFormAdmin.addEventListener('submit', e => {
+    document.getElementById("stockForm").addEventListener("submit", e => {
       e.preventDefault();
-      const item = itemAdmin.value;
-      const quantity = quantityAdmin.value;
-      const action = actionAdmin.value;
-
-      const url = `${stockURL}?item=${encodeURIComponent(item)}&action=${encodeURIComponent(action)}&quantity=${encodeURIComponent(quantity)}`;
+      const item = document.getElementById("item").value;
+      const quantity = document.getElementById("quantity").value;
+      const action = document.getElementById("action").value;
+      const url = `${stockURL}?item=${item}&action=${action}&quantity=${quantity}`;
 
       fetch(url)
-        .then(res => {
-          if (!res.ok) throw new Error('Failed to update stock');
-          return res.json();
-        })
-        .then(data => {
-          responseAdminSuccess.textContent = '✅ Stock updated successfully!';
-          loadStockAdmin();
-          stockFormAdmin.reset();
+        .then(res => res.text())
+        .then(() => {
+          document.getElementById("response").innerText = "✅ Submitted!";
+          updateLiveStock();
         })
         .catch(err => {
-          responseAdminSuccess.textContent = '❌ Error updating stock.';
-          console.error(err);
+          document.getElementById("response").innerText = "❌ " + err;
         });
     });
 
-    // Customer - Add item to purchase summary
-    addToSummaryBtn.addEventListener('click', () => {
-      const item = itemCustomer.value;
-      const quantity = parseInt(quantityCustomer.value, 10);
-      if (quantity <= 0 || isNaN(quantity)) {
-        alert('Please enter a valid quantity.');
-        return;
-      }
-
-      if (purchaseSummary[item]) {
-        purchaseSummary[item] += quantity;
-      } else {
-        purchaseSummary[item] = quantity;
-      }
-
-      quantityCustomer.value = '';
-      updateSummaryUI();
-      responseCustomer.textContent = '';
+    // Customer
+    document.getElementById("addToSummaryBtn").addEventListener("click", () => {
+      const item = document.getElementById("itemCustomer").value;
+      const qty = parseInt(document.getElementById("quantityCustomer").value);
+      if (!qty || qty < 1) return alert("Enter valid quantity.");
+      purchaseSummary[item] = (purchaseSummary[item] || 0) + qty;
+      document.getElementById("quantityCustomer").value = "";
+      renderSummary();
     });
 
-    // Update the purchase summary display
-    function updateSummaryUI() {
+    function renderSummary() {
+      const summaryDiv = document.getElementById("purchaseSummary");
       if (Object.keys(purchaseSummary).length === 0) {
-        purchaseSummaryDiv.textContent = 'No items added.';
+        summaryDiv.innerHTML = "No items added.";
         return;
       }
-      purchaseSummaryDiv.innerHTML = '';
-      for (const [item, qty] of Object.entries(purchaseSummary)) {
-        const div = document.createElement('div');
-        div.textContent = `${item}: ${qty}`;
-        purchaseSummaryDiv.appendChild(div);
+
+      let html = "<ul>";
+      let total = 0;
+
+      for (const item in purchaseSummary) {
+        const qty = purchaseSummary[item];
+        const cost = qty * prices[item];
+        total += cost;
+        html += `
+          <li class="summary-item">
+            ${item} × ${qty} = ${cost}฿
+            <button onclick="removeItem('${item}')">🗑️</button>
+          </li>`;
       }
+
+      html += `</ul><strong>Total: ${total}฿</strong>`;
+      summaryDiv.innerHTML = html;
     }
 
-    // Customer - Confirm purchase: send sequential remove requests
-    confirmPurchaseBtn.addEventListener('click', async () => {
-      const items = Object.entries(purchaseSummary);
-      if (items.length === 0) {
-        alert('No items in purchase summary.');
-        return;
+    function removeItem(item) {
+      delete purchaseSummary[item];
+      renderSummary();
+    }
+
+    document.getElementById("confirmPurchaseBtn").addEventListener("click", async () => {
+      const responseEl = document.getElementById("responseCustomer");
+      if (Object.keys(purchaseSummary).length === 0) {
+        return alert("No items to confirm.");
       }
 
-      responseCustomer.textContent = 'Processing purchase...';
-      confirmPurchaseBtn.disabled = true;
-      addToSummaryBtn.disabled = true;
-
+      responseEl.innerText = "⏳ Processing...";
       try {
-        for (const [item, qty] of items) {
-          const url = `${stockURL}?item=${encodeURIComponent(item)}&action=Remove&quantity=${encodeURIComponent(qty)}`;
-          const res = await fetch(url);
-          if (!res.ok) throw new Error(`Failed to update ${item}`);
-          await res.json();
+        for (const item in purchaseSummary) {
+          const qty = purchaseSummary[item];
+          const url = `${stockURL}?item=${item}&action=Remove&quantity=${qty}`;
+          await fetch(url);
         }
-        responseCustomer.textContent = '✅ Purchase completed successfully!';
+        responseEl.innerText = "✅ Purchase completed!";
         purchaseSummary = {};
-        updateSummaryUI();
+        renderSummary();
       } catch (err) {
-        responseCustomer.textContent = '❌ Error during purchase: ' + err.message;
-        console.error(err);
+        responseEl.innerText = "❌ Error: " + err.message;
       }
-
-      confirmPurchaseBtn.disabled = false;
-      addToSummaryBtn.disabled = false;
     });
   </script>
 </body>
