@@ -1,270 +1,207 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <title>NFC Smart Inventory System</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;600&display=swap" rel="stylesheet" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NFC Inventory System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun&display=swap" rel="stylesheet">
   <style>
-    * { box-sizing: border-box; }
     body {
-      margin: 0;
       font-family: 'Sarabun', sans-serif;
-      background: #eef3f7;
+      margin: 0;
+      padding: 0;
+      background: #f4f4f4;
       color: #333;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      padding: 20px;
     }
     .container {
-      background: white;
+      max-width: 600px;
+      margin: auto;
+      padding: 20px;
+      background: #fff;
       border-radius: 16px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-      max-width: 420px;
-      width: 100%;
-      padding: 30px;
-      text-align: center;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
     h1, h2 {
-      margin-bottom: 20px;
-      color: #2c3e50;
-    }
-    label {
-      display: block;
-      text-align: left;
-      margin-top: 15px;
-      font-weight: 600;
-    }
-    input, select {
-      width: 100%;
-      padding: 10px;
-      font-size: 16px;
-      margin-bottom: 10px;
-      border-radius: 8px;
-      border: 1px solid #ccc;
+      text-align: center;
     }
     button {
-      width: 100%;
-      padding: 12px;
-      font-size: 16px;
-      background: #007acc;
-      color: white;
+      padding: 10px 15px;
       border: none;
       border-radius: 8px;
+      background: #007BFF;
+      color: white;
       cursor: pointer;
-      font-weight: bold;
-      margin-top: 10px;
+      margin: 5px;
     }
-    button:hover {
-      background: #005fa3;
+    input[type="number"] {
+      padding: 5px;
+      width: 60px;
+      margin-left: 10px;
     }
-    .hidden { display: none; }
-    #stock-list {
-      list-style: none;
-      padding: 0;
-      text-align: left;
-      margin: 20px 0;
-    }
-    #stock-list li {
-      margin-bottom: 6px;
-    }
-    #summary {
-      text-align: left;
+    .summary, .stock, .logs {
       margin-top: 20px;
     }
-    #total {
-      font-size: 20px;
-      font-weight: bold;
-      margin-top: 10px;
+    .item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+    }
+    .receipt {
+      background: #f1f1f1;
+      padding: 15px;
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+    .timestamp {
+      font-size: 0.8em;
+      color: #777;
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <h1>NFC Smart Inventory</h1>
-
-    <!-- Main Menu -->
-    <div id="modeSelection">
-      <button onclick="selectMode('customer')">Customer</button>
-      <button onclick="selectMode('admin')">Admin</button>
-    </div>
-
-    <!-- Admin Section -->
-    <div id="adminSection" class="hidden">
-      <h2>Admin Mode</h2>
-      <div id="live-stock">
-        <h3>Current Stock</h3>
-        <ul id="stock-list"><li>Loading...</li></ul>
-      </div>
-      <form id="adminForm">
-        <label for="item">Item</label>
-        <select id="item" required>
-          <option value="Cookie">Cookie</option>
-          <option value="Brownie">Brownie</option>
-          <option value="Macaron">Macaron</option>
-        </select>
-        <label for="quantity">Quantity</label>
-        <input type="number" id="quantity" min="1" required />
-        <label for="action">Action</label>
-        <select id="action" required>
-          <option value="Add">Add</option>
-          <option value="Remove">Remove</option>
-        </select>
-        <button type="submit">Submit</button>
-      </form>
-      <p id="response"></p>
-      <button onclick="goBackToMain()">🔙 Back to Main</button>
-    </div>
-
-    <!-- Customer Section -->
-    <div id="customerSection" class="hidden">
-      <h2>Customer Mode</h2>
-      <form id="customerForm">
-        <label for="c_item">Item</label>
-        <select id="c_item" required>
-          <option value="Cookie">Cookie (15฿)</option>
-          <option value="Brownie">Brownie (20฿)</option>
-          <option value="Macaron">Macaron (35฿)</option>
-        </select>
-        <label for="c_quantity">Quantity</label>
-        <input type="number" id="c_quantity" min="1" required />
-        <button type="submit">Add to Order</button>
-      </form>
-
-      <div id="summary">
-        <h3>Order Summary</h3>
-        <ul id="order-list"></ul>
-        <div id="total">Total: 0฿</div>
-        <button onclick="submitOrder()">Confirm Order</button>
-      </div>
-
-      <p id="responseCustomer"></p>
-      <button onclick="goBackToMain()">🔙 Back to Main</button>
+<div class="container" id="app">
+  <div id="main">
+    <h1>NFC Inventory System</h1>
+    <button onclick="startScan()">Scan Product</button>
+    <div class="summary">
+      <h2>Order Summary</h2>
+      <div id="orderList"></div>
+      <button onclick="submitOrder()">Submit Order</button>
     </div>
   </div>
+  <div id="receipt" style="display:none">
+    <h1>Order Receipt</h1>
+    <p id="orderNumber"></p>
+    <div id="receiptDetails"></div>
+    <h2 id="totalAmount"></h2>
+    <button onclick="goHome()">Back to Home</button>
+  </div>
+  <div class="logs">
+    <h2>Server Logs</h2>
+    <div id="logs"></div>
+  </div>
+</div>
 
-  <script>
-    const stockURL = 'https://script.google.com/macros/s/AKfycbyOJTnxfH1Sdu41xCyWGJc7OaM_GbNqG4FHw3JmmNDZPl4wgPu1knrEqgp0UGwWP0e1/exec';
-    const prices = { Cookie: 15, Brownie: 20, Macaron: 35 };
-    const order = [];
+<script>
+const PRODUCTS = {
+  '04A11F89320289': { name: 'Cleanser', price: 10 },
+  '04F1458B320289': { name: 'Toner', price: 15 },
+  '04816B94320289': { name: 'Serum', price: 20 }
+};
 
-    function selectMode(mode) {
-      document.getElementById("modeSelection").classList.add("hidden");
-      if (mode === "admin") {
-        const pass = prompt("Enter admin password:");
-        if (pass === "12345") {
-          document.getElementById("adminSection").classList.remove("hidden");
-          updateLiveStock();
-        } else {
-          alert("Incorrect password.");
-          goBackToMain();
-        }
-      } else {
-        document.getElementById("customerSection").classList.remove("hidden");
-      }
-    }
+let order = [];
 
-    function goBackToMain() {
-      document.getElementById("modeSelection").classList.remove("hidden");
-      document.getElementById("adminSection").classList.add("hidden");
-      document.getElementById("customerSection").classList.add("hidden");
-      document.getElementById("response").innerText = "";
-      document.getElementById("responseCustomer").innerText = "";
-      document.getElementById("order-list").innerHTML = "";
-      document.getElementById("total").innerText = "Total: 0฿";
-      order.length = 0;
-    }
-
-    function updateLiveStock() {
-      fetch(stockURL)
-        .then(res => res.json())
-        .then(data => {
-          const list = document.getElementById("stock-list");
-          list.innerHTML = '';
-          for (const item in data.stock) {
-            const li = document.createElement("li");
-            li.textContent = `${item}: ${data.stock[item]}`;
-            list.appendChild(li);
+function startScan() {
+  if ('NDEFReader' in window) {
+    const reader = new NDEFReader();
+    reader.scan().then(() => {
+      reader.onreading = event => {
+        const id = event.serialNumber;
+        if (PRODUCTS[id]) {
+          const product = PRODUCTS[id];
+          const qty = parseInt(prompt(`Enter quantity for ${product.name}`), 10);
+          if (!isNaN(qty)) {
+            order.push({ ...product, qty });
+            updateOrderList();
           }
-        })
-        .catch(() => {
-          document.getElementById("stock-list").innerHTML = "<li>Failed to load stock.</li>";
-        });
-    }
-
-    document.getElementById("adminForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-      const item = document.getElementById("item").value;
-      const quantity = document.getElementById("quantity").value;
-      const action = document.getElementById("action").value;
-      const url = `${stockURL}?item=${item}&action=${action}&quantity=${quantity}`;
-      fetch(url)
-        .then(res => res.json())
-        .then(() => {
-          document.getElementById("response").innerText = "✅ Submitted!";
-          updateLiveStock();
-        })
-        .catch(err => {
-          document.getElementById("response").innerText = "❌ Error: " + err;
-        });
-    });
-
-    document.getElementById("customerForm").addEventListener("submit", function (e) {
-      e.preventDefault();
-      const item = document.getElementById("c_item").value;
-      const quantity = parseInt(document.getElementById("c_quantity").value);
-      if (quantity < 1) return;
-      const existing = order.find(o => o.item === item);
-      if (existing) existing.quantity += quantity;
-      else order.push({ item, quantity });
-      renderOrder();
-    });
-
-    function renderOrder() {
-      const ul = document.getElementById("order-list");
-      ul.innerHTML = '';
-      let total = 0;
-      order.forEach((o, i) => {
-        const li = document.createElement("li");
-        const subtotal = o.quantity * prices[o.item];
-        li.textContent = `${o.item} x ${o.quantity} = ${subtotal}฿ `;
-        const delBtn = document.createElement("button");
-        delBtn.textContent = "❌";
-        delBtn.style.marginLeft = "10px";
-        delBtn.onclick = () => {
-          order.splice(i, 1);
-          renderOrder();
-        };
-        li.appendChild(delBtn);
-        ul.appendChild(li);
-        total += subtotal;
-      });
-      document.getElementById("total").innerText = `Total: ${total}฿`;
-    }
-
-    async function submitOrder() {
-      if (order.length === 0) return alert("No items to submit.");
-
-      document.getElementById("responseCustomer").innerText = "⏳ Processing order...";
-
-      try {
-        for (const o of order) {
-          const url = `${stockURL}?item=${encodeURIComponent(o.item)}&action=Remove&quantity=${encodeURIComponent(o.quantity)}`;
-          const res = await fetch(url);
-          if (!res.ok) throw new Error(`Failed to update ${o.item}`);
-          const data = await res.json();
-          if (data.status === 'error') throw new Error(`Error updating ${o.item}: ${data.message || 'Unknown error'}`);
+        } else {
+          alert('Unknown product');
         }
-        document.getElementById("responseCustomer").innerText = "✅ Order Confirmed!";
-        order.length = 0;
-        renderOrder();
-      } catch (error) {
-        document.getElementById("responseCustomer").innerText = "❌ Error submitting order. Try again.";
-        console.error(error);
-      }
-    }
-  </script>
+      };
+    });
+  } else {
+    alert('Web NFC not supported');
+  }
+}
+
+function updateOrderList() {
+  const list = document.getElementById('orderList');
+  list.innerHTML = '';
+  order.forEach((item, index) => {
+    const div = document.createElement('div');
+    div.className = 'item';
+    div.innerHTML = `${item.name} - ${item.qty} x ฿${item.price} = ฿${item.qty * item.price} <button onclick="removeItem(${index})">Delete</button>`;
+    list.appendChild(div);
+  });
+}
+
+function removeItem(index) {
+  order.splice(index, 1);
+  updateOrderList();
+}
+
+function submitOrder() {
+  if (order.length === 0) return alert('No items in order.');
+
+  const timestamp = new Date().toISOString();
+  const log = JSON.parse(localStorage.getItem('logs') || '[]');
+
+  const orderNumber = getOrderNumber();
+  localStorage.setItem('lastOrderTime', new Date().toISOString());
+  localStorage.setItem('orderNumber', orderNumber);
+
+  log.push({ type: 'order', orderNumber, timestamp, order });
+  localStorage.setItem('logs', JSON.stringify(cleanOldLogs(log)));
+
+  showReceipt(order, orderNumber);
+  order = [];
+  updateOrderList();
+  renderLogs();
+}
+
+function showReceipt(order, orderNumber) {
+  document.getElementById('main').style.display = 'none';
+  document.getElementById('receipt').style.display = 'block';
+  document.getElementById('orderNumber').innerText = `Order #: ${orderNumber}`;
+
+  let total = 0;
+  const detail = document.getElementById('receiptDetails');
+  detail.innerHTML = '';
+  order.forEach(item => {
+    const div = document.createElement('div');
+    const cost = item.qty * item.price;
+    total += cost;
+    div.innerText = `${item.name} - ${item.qty} x ฿${item.price} = ฿${cost}`;
+    detail.appendChild(div);
+  });
+  document.getElementById('totalAmount').innerText = `Total: ฿${total}`;
+}
+
+function goHome() {
+  document.getElementById('main').style.display = 'block';
+  document.getElementById('receipt').style.display = 'none';
+}
+
+function getOrderNumber() {
+  const lastTime = new Date(localStorage.getItem('lastOrderTime'));
+  const now = new Date();
+  const lastNumber = parseInt(localStorage.getItem('orderNumber') || '0', 10);
+  if (now - lastTime > 24 * 60 * 60 * 1000) {
+    return '001';
+  } else {
+    const next = (lastNumber + 1).toString().padStart(3, '0');
+    return next;
+  }
+}
+
+function cleanOldLogs(logs) {
+  const twoDaysAgo = Date.now() - 2 * 24 * 60 * 60 * 1000;
+  return logs.filter(l => new Date(l.timestamp).getTime() > twoDaysAgo);
+}
+
+function renderLogs() {
+  const logs = JSON.parse(localStorage.getItem('logs') || '[]');
+  const container = document.getElementById('logs');
+  container.innerHTML = '';
+  logs.forEach(log => {
+    const div = document.createElement('div');
+    div.className = 'timestamp';
+    div.innerText = `${log.timestamp} | Order ${log.orderNumber} | ${log.order.map(i => i.name + ' x' + i.qty).join(', ')}`;
+    container.appendChild(div);
+  });
+}
+
+renderLogs();
+</script>
 </body>
 </html>
