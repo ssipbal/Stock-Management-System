@@ -2,88 +2,102 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>NFC Inventory System</title>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun&display=swap" rel="stylesheet">
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Sarabun&display=swap');
     body {
       font-family: 'Sarabun', sans-serif;
       margin: 0;
-      padding: 0;
-      background: #f4f4f4;
-      color: #333;
+      padding: 20px;
+      background: #f9f9f9;
     }
     .container {
-      max-width: 600px;
+      max-width: 500px;
       margin: auto;
+      background: white;
       padding: 20px;
-      background: #fff;
-      border-radius: 16px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      border-radius: 12px;
+      box-shadow: 0 0 12px rgba(0,0,0,0.1);
     }
     h1, h2 {
       text-align: center;
     }
     button {
-      padding: 10px 15px;
+      margin: 10px 0;
+      padding: 10px;
+      width: 100%;
       border: none;
-      border-radius: 8px;
+      border-radius: 6px;
       background: #007BFF;
       color: white;
+      font-size: 16px;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px;
+      margin: 6px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+    }
+    table {
+      width: 100%;
+      margin-top: 15px;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 8px;
+      text-align: left;
+      border-bottom: 1px solid #ddd;
+    }
+    .link {
+      display: block;
+      margin-top: 15px;
+      text-align: center;
+      color: #007BFF;
       cursor: pointer;
-      margin: 5px;
-    }
-    input[type="number"] {
-      padding: 5px;
-      width: 60px;
-      margin-left: 10px;
-    }
-    .summary, .stock, .logs {
-      margin-top: 20px;
-    }
-    .item {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-    }
-    .receipt {
-      background: #f1f1f1;
-      padding: 15px;
-      border-radius: 10px;
-      margin-top: 20px;
-    }
-    .timestamp {
-      font-size: 0.8em;
-      color: #777;
     }
   </style>
 </head>
 <body>
-<div class="container" id="app">
-  <div id="main">
-    <h1>NFC Inventory System</h1>
-    <button onclick="startScan()">Scan Product</button>
-    <div class="summary">
-      <h2>Order Summary</h2>
-      <div id="orderList"></div>
-      <button onclick="submitOrder()">Submit Order</button>
-    </div>
-  </div>
-  <div id="receipt" style="display:none">
-    <h1>Order Receipt</h1>
-    <p id="orderNumber"></p>
-    <div id="receiptDetails"></div>
-    <h2 id="totalAmount"></h2>
-    <button onclick="goHome()">Back to Home</button>
-  </div>
-  <div class="logs">
-    <h2>Server Logs</h2>
-    <div id="logs"></div>
-  </div>
+
+<div class="container" id="main">
+  <h1>Welcome</h1>
+  <button onclick="location.href='?mode=customer'">Customer</button>
+  <button onclick="adminLogin()">Admin</button>
+</div>
+
+<div class="container" id="customer" style="display:none">
+  <h2>Scan Product</h2>
+  <button onclick="scanNFC()">Scan NFC</button>
+  <div id="orderSummary"></div>
+  <button onclick="submitOrder()">Submit Order</button>
+  <button onclick="location.href='index.html'">Back</button>
+</div>
+
+<div class="container" id="admin" style="display:none">
+  <h2>Admin Panel</h2>
+  <div id="stockList"></div>
+  <input type="text" placeholder="Product (Cleanser, Toner, Serum)" id="adminProduct">
+  <input type="number" placeholder="Quantity" id="adminQty">
+  <button onclick="updateStock()">Add/Remove Stock</button>
+  <button onclick="location.href='?mode=server'">View Server Log</button>
+  <button onclick="location.href='index.html'">Back</button>
+</div>
+
+<div class="container" id="receipt" style="display:none">
+  <h2>Order Receipt</h2>
+  <div id="receiptContent"></div>
+  <button onclick="location.href='index.html'">Back to Main</button>
+</div>
+
+<div class="container" id="server" style="display:none">
+  <h2>Server Log</h2>
+  <div id="serverLog"></div>
+  <button onclick="location.href='?mode=admin'">Back</button>
 </div>
 
 <script>
-const PRODUCTS = {
+const products = {
   '04A11F89320289': { name: 'Cleanser', price: 10 },
   '04F1458B320289': { name: 'Toner', price: 15 },
   '04816B94320289': { name: 'Serum', price: 20 }
@@ -91,117 +105,167 @@ const PRODUCTS = {
 
 let order = [];
 
-function startScan() {
-  if ('NDEFReader' in window) {
-    const reader = new NDEFReader();
-    reader.scan().then(() => {
-      reader.onreading = event => {
-        const id = event.serialNumber;
-        if (PRODUCTS[id]) {
-          const product = PRODUCTS[id];
-          const qty = parseInt(prompt(`Enter quantity for ${product.name}`), 10);
-          if (!isNaN(qty)) {
-            order.push({ ...product, qty });
-            updateOrderList();
-          }
-        } else {
-          alert('Unknown product');
-        }
-      };
-    });
-  } else {
-    alert('Web NFC not supported');
-  }
+function save(key, val) {
+  localStorage.setItem(key, JSON.stringify(val));
+  new BroadcastChannel('sync').postMessage({ key, val });
 }
 
-function updateOrderList() {
-  const list = document.getElementById('orderList');
-  list.innerHTML = '';
-  order.forEach((item, index) => {
-    const div = document.createElement('div');
-    div.className = 'item';
-    div.innerHTML = `${item.name} - ${item.qty} x ฿${item.price} = ฿${item.qty * item.price} <button onclick="removeItem(${index})">Delete</button>`;
-    list.appendChild(div);
+function load(key, def) {
+  return JSON.parse(localStorage.getItem(key)) || def;
+}
+
+function syncStorage() {
+  const ch = new BroadcastChannel('sync');
+  ch.onmessage = e => {
+    localStorage.setItem(e.data.key, JSON.stringify(e.data.val));
+    location.reload();
+  };
+}
+
+function scanNFC() {
+  if (!('NDEFReader' in window)) return alert('NFC not supported');
+  const reader = new NDEFReader();
+  reader.scan().then(() => {
+    reader.onreading = event => {
+      const id = event.serialNumber;
+      if (products[id]) {
+        const qty = prompt(`Enter quantity for ${products[id].name}:`);
+        if (qty && !isNaN(qty)) {
+          const existing = order.find(i => i.id === id);
+          if (existing) existing.qty += parseInt(qty);
+          else order.push({ id, qty: parseInt(qty) });
+          renderOrder();
+        }
+      } else {
+        alert('Unknown product');
+      }
+    };
   });
 }
 
-function removeItem(index) {
-  order.splice(index, 1);
-  updateOrderList();
+function renderOrder() {
+  let html = '<table><tr><th>Product</th><th>Qty</th><th>Price</th><th></th></tr>';
+  order.forEach((item, i) => {
+    const p = products[item.id];
+    html += `<tr>
+      <td>${p.name}</td>
+      <td><input type="number" value="${item.qty}" onchange="order[${i}].qty=this.valueAsNumber; renderOrder()"></td>
+      <td>฿${p.price}</td>
+      <td><button onclick="order.splice(${i},1); renderOrder()">X</button></td>
+    </tr>`;
+  });
+  html += '</table>';
+  document.getElementById('orderSummary').innerHTML = html;
 }
 
 function submitOrder() {
-  if (order.length === 0) return alert('No items in order.');
-
-  const timestamp = new Date().toISOString();
-  const log = JSON.parse(localStorage.getItem('logs') || '[]');
-
-  const orderNumber = getOrderNumber();
-  localStorage.setItem('lastOrderTime', new Date().toISOString());
-  localStorage.setItem('orderNumber', orderNumber);
-
-  log.push({ type: 'order', orderNumber, timestamp, order });
-  localStorage.setItem('logs', JSON.stringify(cleanOldLogs(log)));
-
-  showReceipt(order, orderNumber);
-  order = [];
-  updateOrderList();
-  renderLogs();
-}
-
-function showReceipt(order, orderNumber) {
-  document.getElementById('main').style.display = 'none';
-  document.getElementById('receipt').style.display = 'block';
-  document.getElementById('orderNumber').innerText = `Order #: ${orderNumber}`;
-
+  if (order.length === 0) return alert('No items');
+  const stock = load('stock', {});
+  const log = load('log', []);
   let total = 0;
-  const detail = document.getElementById('receiptDetails');
-  detail.innerHTML = '';
   order.forEach(item => {
-    const div = document.createElement('div');
-    const cost = item.qty * item.price;
-    total += cost;
-    div.innerText = `${item.name} - ${item.qty} x ฿${item.price} = ฿${cost}`;
-    detail.appendChild(div);
+    const p = products[item.id];
+    stock[item.id] = (stock[item.id] || 0) - item.qty;
+    total += p.price * item.qty;
   });
-  document.getElementById('totalAmount').innerText = `Total: ฿${total}`;
-}
 
-function goHome() {
-  document.getElementById('main').style.display = 'block';
-  document.getElementById('receipt').style.display = 'none';
-}
-
-function getOrderNumber() {
-  const lastTime = new Date(localStorage.getItem('lastOrderTime'));
-  const now = new Date();
-  const lastNumber = parseInt(localStorage.getItem('orderNumber') || '0', 10);
-  if (now - lastTime > 24 * 60 * 60 * 1000) {
-    return '001';
+  const orderNumData = load('orderNumber', { date: new Date().toDateString(), num: 0 });
+  if (orderNumData.date !== new Date().toDateString()) {
+    orderNumData.date = new Date().toDateString();
+    orderNumData.num = 1;
   } else {
-    const next = (lastNumber + 1).toString().padStart(3, '0');
-    return next;
+    orderNumData.num++;
   }
+  const orderNumber = orderNumData.num.toString().padStart(3, '0');
+  save('orderNumber', orderNumData);
+
+  const timestamp = new Date().toLocaleString();
+  log.push({ type: 'Order', orderNumber, timestamp, details: JSON.parse(JSON.stringify(order)) });
+  const cutoff = Date.now() - 2 * 86400000;
+  const newLog = log.filter(e => new Date(e.timestamp).getTime() >= cutoff);
+  save('log', newLog);
+  save('stock', stock);
+  const receipt = { order, orderNumber, total, timestamp };
+  save('lastReceipt', receipt);
+  location.href = '?mode=receipt';
 }
 
-function cleanOldLogs(logs) {
-  const twoDaysAgo = Date.now() - 2 * 24 * 60 * 60 * 1000;
-  return logs.filter(l => new Date(l.timestamp).getTime() > twoDaysAgo);
+function adminLogin() {
+  const pass = prompt('Enter admin code:');
+  if (pass === '12345') location.href = '?mode=admin';
+  else alert('Wrong password');
 }
 
-function renderLogs() {
-  const logs = JSON.parse(localStorage.getItem('logs') || '[]');
-  const container = document.getElementById('logs');
-  container.innerHTML = '';
-  logs.forEach(log => {
-    const div = document.createElement('div');
-    div.className = 'timestamp';
-    div.innerText = `${log.timestamp} | Order ${log.orderNumber} | ${log.order.map(i => i.name + ' x' + i.qty).join(', ')}`;
-    container.appendChild(div);
+function updateStock() {
+  const product = document.getElementById('adminProduct').value.trim();
+  const qty = parseInt(document.getElementById('adminQty').value);
+  const stock = load('stock', {});
+  const log = load('log', []);
+  const id = Object.keys(products).find(k => products[k].name.toLowerCase() === product.toLowerCase());
+  if (!id) return alert('Unknown product');
+  stock[id] = (stock[id] || 0) + qty;
+  const timestamp = new Date().toLocaleString();
+  log.push({ type: 'Stock Update', timestamp, details: { product, qty } });
+  const cutoff = Date.now() - 2 * 86400000;
+  const newLog = log.filter(e => new Date(e.timestamp).getTime() >= cutoff);
+  save('stock', stock);
+  save('log', newLog);
+  renderStock();
+}
+
+function renderStock() {
+  const stock = load('stock', {});
+  let html = '<table><tr><th>Product</th><th>Stock</th></tr>';
+  for (const id in products) {
+    html += `<tr><td>${products[id].name}</td><td>${stock[id] || 0}</td></tr>`;
+  }
+  html += '</table>';
+  document.getElementById('stockList').innerHTML = html;
+}
+
+function renderReceipt() {
+  const data = load('lastReceipt', {});
+  if (!data.order) return;
+  let html = `<h3>Order #${data.orderNumber}</h3><p>${data.timestamp}</p><table><tr><th>Product</th><th>Qty</th><th>Price</th></tr>`;
+  data.order.forEach(item => {
+    const p = products[item.id];
+    html += `<tr><td>${p.name}</td><td>${item.qty}</td><td>฿${p.price * item.qty}</td></tr>`;
   });
+  html += `</table><h3>Total: ฿${data.total}</h3>`;
+  document.getElementById('receiptContent').innerHTML = html;
 }
 
-renderLogs();
+function renderServer() {
+  const log = load('log', []);
+  let html = '<ul>';
+  log.forEach(entry => {
+    html += `<li><strong>${entry.type}</strong> (${entry.timestamp})<br>`;
+    if (entry.type === 'Order') {
+      html += `Order #${entry.orderNumber}: `;
+      entry.details.forEach(i => {
+        html += `${products[i.id].name} x${i.qty}, `;
+      });
+    } else if (entry.type === 'Stock Update') {
+      html += `${entry.details.product}: ${entry.details.qty > 0 ? '+' : ''}${entry.details.qty}`;
+    }
+    html += '</li>';
+  });
+  html += '</ul>';
+  document.getElementById('serverLog').innerHTML = html;
+}
+
+function route() {
+  const mode = new URLSearchParams(location.search).get('mode');
+  syncStorage();
+  if (mode === 'customer') document.getElementById('customer').style.display = 'block';
+  else if (mode === 'admin') { document.getElementById('admin').style.display = 'block'; renderStock(); }
+  else if (mode === 'receipt') { document.getElementById('receipt').style.display = 'block'; renderReceipt(); }
+  else if (mode === 'server') { document.getElementById('server').style.display = 'block'; renderServer(); }
+  else document.getElementById('main').style.display = 'block';
+}
+
+route();
 </script>
+
 </body>
 </html>
