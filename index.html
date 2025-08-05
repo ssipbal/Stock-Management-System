@@ -1,271 +1,305 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>NFC Inventory System</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun&display=swap" rel="stylesheet"/>
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Sarabun&display=swap');
-    body {
+    * {
       font-family: 'Sarabun', sans-serif;
+    }
+    body {
       margin: 0;
-      padding: 20px;
-      background: #f9f9f9;
+      padding: 2rem;
+      background: #f5f5f5;
     }
     .container {
-      max-width: 500px;
+      max-width: 480px;
       margin: auto;
       background: white;
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 0 12px rgba(0,0,0,0.1);
+      padding: 2rem;
+      border-radius: 1rem;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
     }
-    h1, h2 {
+    h2 {
       text-align: center;
     }
     button {
-      margin: 10px 0;
-      padding: 10px;
+      display: block;
       width: 100%;
+      padding: 1rem;
+      margin: 0.5rem 0;
+      font-size: 1.1rem;
       border: none;
-      border-radius: 6px;
-      background: #007BFF;
+      border-radius: 0.5rem;
+      background-color: #007bff;
       color: white;
-      font-size: 16px;
+      cursor: pointer;
     }
     input, select {
       width: 100%;
-      padding: 8px;
-      margin: 6px 0;
-      border-radius: 6px;
+      padding: 0.8rem;
+      margin: 0.5rem 0;
       border: 1px solid #ccc;
+      border-radius: 0.5rem;
     }
-    table {
-      width: 100%;
-      margin-top: 15px;
-      border-collapse: collapse;
+    .item {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.5rem 0;
     }
-    th, td {
-      padding: 8px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
+    .order-summary {
+      background: #fafafa;
+      border: 1px solid #ddd;
+      padding: 1rem;
+      margin-top: 1rem;
+      border-radius: 0.5rem;
     }
-    .link {
-      display: block;
-      margin-top: 15px;
-      text-align: center;
-      color: #007BFF;
-      cursor: pointer;
+    .receipt {
+      font-size: 0.95rem;
+      line-height: 1.5;
+    }
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .small-btn {
+      font-size: 0.85rem;
+      padding: 0.5rem;
     }
   </style>
 </head>
 <body>
+  <div class="container" id="main">
+    <h2>Select Mode</h2>
+    <button onclick="location.href='?mode=customer'">Customer</button>
+    <button onclick="promptAdmin()">Admin</button>
+  </div>
 
-<div class="container" id="main">
-  <h1>Welcome</h1>
-  <button onclick="location.href='?mode=customer'">Customer</button>
-  <button onclick="adminLogin()">Admin</button>
-</div>
+  <script>
+    const products = {
+      "04:A1:1F:89:32:02:89": { name: "Cleanser", price: 10 },
+      "04:F1:45:8B:32:02:89": { name: "Toner", price: 15 },
+      "04:81:6B:94:32:02:89": { name: "Serum", price: 20 }
+    };
 
-<div class="container" id="customer" style="display:none">
-  <h2>Scan Product</h2>
-  <button onclick="scanNFC()">Scan NFC</button>
-  <div id="orderSummary"></div>
-  <button onclick="submitOrder()">Submit Order</button>
-  <button onclick="location.href='index.html'">Back</button>
-</div>
+    const initData = () => {
+      if (!localStorage.stock) {
+        localStorage.stock = JSON.stringify({ Cleanser: 10, Toner: 10, Serum: 10 });
+      }
+      if (!localStorage.logs) {
+        localStorage.logs = JSON.stringify([]);
+      }
+      cleanupOldLogs();
+    };
 
-<div class="container" id="admin" style="display:none">
-  <h2>Admin Panel</h2>
-  <div id="stockList"></div>
-  <input type="text" placeholder="Product (Cleanser, Toner, Serum)" id="adminProduct">
-  <input type="number" placeholder="Quantity" id="adminQty">
-  <button onclick="updateStock()">Add/Remove Stock</button>
-  <button onclick="location.href='?mode=server'">View Server Log</button>
-  <button onclick="location.href='index.html'">Back</button>
-</div>
+    const cleanupOldLogs = () => {
+      let logs = JSON.parse(localStorage.logs || "[]");
+      const now = Date.now();
+      logs = logs.filter(log => now - log.timestamp < 2 * 86400 * 1000);
+      localStorage.logs = JSON.stringify(logs);
+    };
 
-<div class="container" id="receipt" style="display:none">
-  <h2>Order Receipt</h2>
-  <div id="receiptContent"></div>
-  <button onclick="location.href='index.html'">Back to Main</button>
-</div>
+    const addLog = (type, detail) => {
+      const logs = JSON.parse(localStorage.logs || "[]");
+      logs.push({ type, detail, timestamp: Date.now() });
+      localStorage.logs = JSON.stringify(logs);
+    };
 
-<div class="container" id="server" style="display:none">
-  <h2>Server Log</h2>
-  <div id="serverLog"></div>
-  <button onclick="location.href='?mode=admin'">Back</button>
-</div>
-
-<script>
-const products = {
-  '04A11F89320289': { name: 'Cleanser', price: 10 },
-  '04F1458B320289': { name: 'Toner', price: 15 },
-  '04816B94320289': { name: 'Serum', price: 20 }
-};
-
-let order = [];
-
-function save(key, val) {
-  localStorage.setItem(key, JSON.stringify(val));
-  new BroadcastChannel('sync').postMessage({ key, val });
-}
-
-function load(key, def) {
-  return JSON.parse(localStorage.getItem(key)) || def;
-}
-
-function syncStorage() {
-  const ch = new BroadcastChannel('sync');
-  ch.onmessage = e => {
-    localStorage.setItem(e.data.key, JSON.stringify(e.data.val));
-    location.reload();
-  };
-}
-
-function scanNFC() {
-  if (!('NDEFReader' in window)) return alert('NFC not supported');
-  const reader = new NDEFReader();
-  reader.scan().then(() => {
-    reader.onreading = event => {
-      const id = event.serialNumber;
-      if (products[id]) {
-        const qty = prompt(`Enter quantity for ${products[id].name}:`);
-        if (qty && !isNaN(qty)) {
-          const existing = order.find(i => i.id === id);
-          if (existing) existing.qty += parseInt(qty);
-          else order.push({ id, qty: parseInt(qty) });
-          renderOrder();
-        }
+    const getOrderNumber = () => {
+      const today = new Date().toISOString().slice(0, 10);
+      let count = JSON.parse(localStorage.orderCounter || '{}');
+      if (count.date !== today) {
+        count = { date: today, num: 1 };
       } else {
-        alert('Unknown product');
+        count.num++;
+      }
+      localStorage.orderCounter = JSON.stringify(count);
+      return count.num.toString().padStart(3, '0');
+    };
+
+    const promptAdmin = () => {
+      const code = prompt("Enter admin code:");
+      if (code === "12345") {
+        location.href = "?mode=admin";
+      } else {
+        alert("Wrong password!");
       }
     };
-  });
-}
 
-function renderOrder() {
-  let html = '<table><tr><th>Product</th><th>Qty</th><th>Price</th><th></th></tr>';
-  order.forEach((item, i) => {
-    const p = products[item.id];
-    html += `<tr>
-      <td>${p.name}</td>
-      <td><input type="number" value="${item.qty}" onchange="order[${i}].qty=this.valueAsNumber; renderOrder()"></td>
-      <td>฿${p.price}</td>
-      <td><button onclick="order.splice(${i},1); renderOrder()">X</button></td>
-    </tr>`;
-  });
-  html += '</table>';
-  document.getElementById('orderSummary').innerHTML = html;
-}
+    const getQuery = () => {
+      return new URLSearchParams(location.search).get("mode");
+    };
 
-function submitOrder() {
-  if (order.length === 0) return alert('No items');
-  const stock = load('stock', {});
-  const log = load('log', []);
-  let total = 0;
-  order.forEach(item => {
-    const p = products[item.id];
-    stock[item.id] = (stock[item.id] || 0) - item.qty;
-    total += p.price * item.qty;
-  });
+    const renderCustomerPage = () => {
+      document.body.innerHTML = `
+        <div class="container" id="customer">
+          <h2>Customer Page</h2>
+          <button onclick="scanNFC()">Scan NFC</button>
+          <div class="order-summary" id="summary"></div>
+          <button onclick="submitOrder()">Submit Order</button>
+        </div>`;
+      window.order = [];
+      updateSummary();
+    };
 
-  const orderNumData = load('orderNumber', { date: new Date().toDateString(), num: 0 });
-  if (orderNumData.date !== new Date().toDateString()) {
-    orderNumData.date = new Date().toDateString();
-    orderNumData.num = 1;
-  } else {
-    orderNumData.num++;
-  }
-  const orderNumber = orderNumData.num.toString().padStart(3, '0');
-  save('orderNumber', orderNumData);
+    const scanNFC = async () => {
+      try {
+        const ndef = new NDEFReader();
+        await ndef.scan();
+        ndef.onreading = event => {
+          const id = Array.from(event.serialNumber).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join(':');
+          const product = products[id];
+          if (product) {
+            const qty = prompt(`How many ${product.name}?`);
+            if (qty && !isNaN(qty)) {
+              window.order.push({ name: product.name, qty: +qty, price: product.price });
+              updateSummary();
+            }
+          } else {
+            alert("Unknown NFC tag");
+          }
+        };
+      } catch (err) {
+        alert("NFC not supported or permission denied");
+      }
+    };
 
-  const timestamp = new Date().toLocaleString();
-  log.push({ type: 'Order', orderNumber, timestamp, details: JSON.parse(JSON.stringify(order)) });
-  const cutoff = Date.now() - 2 * 86400000;
-  const newLog = log.filter(e => new Date(e.timestamp).getTime() >= cutoff);
-  save('log', newLog);
-  save('stock', stock);
-  const receipt = { order, orderNumber, total, timestamp };
-  save('lastReceipt', receipt);
-  location.href = '?mode=receipt';
-}
+    const updateSummary = () => {
+      const div = document.getElementById("summary");
+      if (!window.order.length) {
+        div.innerHTML = "<i>No items yet</i>";
+        return;
+      }
+      div.innerHTML = window.order.map((item, i) => `
+        <div class="item">
+          ${item.name} x${item.qty} = ฿${item.qty * item.price}
+          <span>
+            <button class="small-btn" onclick="editItem(${i})">Edit</button>
+            <button class="small-btn" onclick="deleteItem(${i})">Delete</button>
+          </span>
+        </div>
+      `).join("");
+    };
 
-function adminLogin() {
-  const pass = prompt('Enter admin code:');
-  if (pass === '12345') location.href = '?mode=admin';
-  else alert('Wrong password');
-}
+    const editItem = (i) => {
+      const qty = prompt("Enter new quantity:", window.order[i].qty);
+      if (qty && !isNaN(qty)) {
+        window.order[i].qty = +qty;
+        updateSummary();
+      }
+    };
 
-function updateStock() {
-  const product = document.getElementById('adminProduct').value.trim();
-  const qty = parseInt(document.getElementById('adminQty').value);
-  const stock = load('stock', {});
-  const log = load('log', []);
-  const id = Object.keys(products).find(k => products[k].name.toLowerCase() === product.toLowerCase());
-  if (!id) return alert('Unknown product');
-  stock[id] = (stock[id] || 0) + qty;
-  const timestamp = new Date().toLocaleString();
-  log.push({ type: 'Stock Update', timestamp, details: { product, qty } });
-  const cutoff = Date.now() - 2 * 86400000;
-  const newLog = log.filter(e => new Date(e.timestamp).getTime() >= cutoff);
-  save('stock', stock);
-  save('log', newLog);
-  renderStock();
-}
+    const deleteItem = (i) => {
+      window.order.splice(i, 1);
+      updateSummary();
+    };
 
-function renderStock() {
-  const stock = load('stock', {});
-  let html = '<table><tr><th>Product</th><th>Stock</th></tr>';
-  for (const id in products) {
-    html += `<tr><td>${products[id].name}</td><td>${stock[id] || 0}</td></tr>`;
-  }
-  html += '</table>';
-  document.getElementById('stockList').innerHTML = html;
-}
-
-function renderReceipt() {
-  const data = load('lastReceipt', {});
-  if (!data.order) return;
-  let html = `<h3>Order #${data.orderNumber}</h3><p>${data.timestamp}</p><table><tr><th>Product</th><th>Qty</th><th>Price</th></tr>`;
-  data.order.forEach(item => {
-    const p = products[item.id];
-    html += `<tr><td>${p.name}</td><td>${item.qty}</td><td>฿${p.price * item.qty}</td></tr>`;
-  });
-  html += `</table><h3>Total: ฿${data.total}</h3>`;
-  document.getElementById('receiptContent').innerHTML = html;
-}
-
-function renderServer() {
-  const log = load('log', []);
-  let html = '<ul>';
-  log.forEach(entry => {
-    html += `<li><strong>${entry.type}</strong> (${entry.timestamp})<br>`;
-    if (entry.type === 'Order') {
-      html += `Order #${entry.orderNumber}: `;
-      entry.details.forEach(i => {
-        html += `${products[i.id].name} x${i.qty}, `;
+    const submitOrder = () => {
+      const stock = JSON.parse(localStorage.stock);
+      window.order.forEach(item => {
+        stock[item.name] = (stock[item.name] || 0) - item.qty;
       });
-    } else if (entry.type === 'Stock Update') {
-      html += `${entry.details.product}: ${entry.details.qty > 0 ? '+' : ''}${entry.details.qty}`;
+      localStorage.stock = JSON.stringify(stock);
+      const orderNum = getOrderNumber();
+      const now = new Date();
+      const time = now.toLocaleString();
+      addLog("Order", { orderNum, items: window.order, time });
+      localStorage.lastReceipt = JSON.stringify({ orderNum, time, items: window.order });
+      location.href = "?mode=receipt";
+    };
+
+    const renderReceiptPage = () => {
+      const receipt = JSON.parse(localStorage.lastReceipt || "{}");
+      const html = receipt.items.map(i =>
+        `<div>${i.name} x${i.qty} @ ฿${i.price} = ฿${i.qty * i.price}</div>`).join("");
+      const total = receipt.items.reduce((sum, i) => sum + i.qty * i.price, 0);
+      document.body.innerHTML = `
+        <div class="container receipt">
+          <h2>Receipt</h2>
+          <div><b>Order No:</b> ${receipt.orderNum}</div>
+          <div><b>Time:</b> ${receipt.time}</div>
+          <hr/>
+          ${html}
+          <hr/>
+          <div><b>Total:</b> ฿${total}</div>
+          <button onclick="location.href='/'">Back</button>
+        </div>`;
+    };
+
+    const renderAdminPage = () => {
+      const stock = JSON.parse(localStorage.stock);
+      document.body.innerHTML = `
+        <div class="container">
+          <h2>Admin Page</h2>
+          ${Object.entries(stock).map(([name, qty]) => `
+            <div class="item">${name}: ${qty}</div>`).join("")}
+          <div class="nav">
+            <button onclick="location.href='?mode=add'">Add Stock</button>
+            <button onclick="location.href='?mode=remove'">Remove Stock</button>
+          </div>
+          <button onclick="location.href='?mode=server'">Server Log</button>
+          <button onclick="location.href='/'">Back</button>
+        </div>`;
+    };
+
+    const renderStockEdit = (type) => {
+      const stock = JSON.parse(localStorage.stock);
+      document.body.innerHTML = `
+        <div class="container">
+          <h2>${type === "add" ? "Add" : "Remove"} Stock</h2>
+          ${Object.keys(stock).map(name => `
+            <label>${name}
+              <input type="number" id="${name}" value="0"/>
+            </label>`).join("")}
+          <button onclick="saveStock('${type}')">Submit</button>
+          <button onclick="location.href='?mode=admin'">Back</button>
+        </div>`;
+    };
+
+    const saveStock = (type) => {
+      const stock = JSON.parse(localStorage.stock);
+      Object.keys(stock).forEach(name => {
+        const qty = +document.getElementById(name).value;
+        if (!isNaN(qty)) {
+          stock[name] += (type === "add" ? qty : -qty);
+          addLog(type === "add" ? "AddStock" : "RemoveStock", {
+            name, qty, time: new Date().toLocaleString()
+          });
+        }
+      });
+      localStorage.stock = JSON.stringify(stock);
+      location.href = "?mode=admin";
+    };
+
+    const renderServerPage = () => {
+      const logs = JSON.parse(localStorage.logs || "[]");
+      document.body.innerHTML = `
+        <div class="container">
+          <h2>Server Log</h2>
+          ${logs.reverse().map(log => `
+            <div class="item">
+              <div><b>${log.type}</b> @ ${new Date(log.timestamp).toLocaleString()}</div>
+              <div style="font-size:0.9rem">${JSON.stringify(log.detail)}</div>
+            </div>
+          `).join("")}
+          <button onclick="location.href='?mode=admin'">Back</button>
+        </div>`;
+    };
+
+    initData();
+
+    switch(getQuery()) {
+      case "customer": renderCustomerPage(); break;
+      case "admin": renderAdminPage(); break;
+      case "add": renderStockEdit("add"); break;
+      case "remove": renderStockEdit("remove"); break;
+      case "server": renderServerPage(); break;
+      case "receipt": renderReceiptPage(); break;
     }
-    html += '</li>';
-  });
-  html += '</ul>';
-  document.getElementById('serverLog').innerHTML = html;
-}
-
-function route() {
-  const mode = new URLSearchParams(location.search).get('mode');
-  syncStorage();
-  if (mode === 'customer') document.getElementById('customer').style.display = 'block';
-  else if (mode === 'admin') { document.getElementById('admin').style.display = 'block'; renderStock(); }
-  else if (mode === 'receipt') { document.getElementById('receipt').style.display = 'block'; renderReceipt(); }
-  else if (mode === 'server') { document.getElementById('server').style.display = 'block'; renderServer(); }
-  else document.getElementById('main').style.display = 'block';
-}
-
-route();
-</script>
-
+  </script>
 </body>
 </html>
