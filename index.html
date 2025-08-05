@@ -1,305 +1,252 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>NFC Inventory System</title>
-  <link href="https://fonts.googleapis.com/css2?family=Sarabun&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Sarabun&display=swap" rel="stylesheet">
   <style>
-    * {
-      font-family: 'Sarabun', sans-serif;
-    }
     body {
-      margin: 0;
-      padding: 2rem;
-      background: #f5f5f5;
-    }
-    .container {
-      max-width: 480px;
-      margin: auto;
-      background: white;
-      padding: 2rem;
-      border-radius: 1rem;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-    h2 {
+      font-family: 'Sarabun', sans-serif;
       text-align: center;
+      padding: 20px;
     }
     button {
-      display: block;
-      width: 100%;
-      padding: 1rem;
-      margin: 0.5rem 0;
-      font-size: 1.1rem;
-      border: none;
-      border-radius: 0.5rem;
-      background-color: #007bff;
-      color: white;
-      cursor: pointer;
+      padding: 10px 20px;
+      margin: 10px;
+      font-size: 18px;
+      border-radius: 8px;
     }
-    input, select {
-      width: 100%;
-      padding: 0.8rem;
-      margin: 0.5rem 0;
-      border: 1px solid #ccc;
-      border-radius: 0.5rem;
-    }
-    .item {
-      display: flex;
-      justify-content: space-between;
-      padding: 0.5rem 0;
-    }
-    .order-summary {
-      background: #fafafa;
-      border: 1px solid #ddd;
-      padding: 1rem;
-      margin-top: 1rem;
-      border-radius: 0.5rem;
-    }
-    .receipt {
-      font-size: 0.95rem;
-      line-height: 1.5;
-    }
-    .nav {
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-      margin-top: 1rem;
-    }
-    .small-btn {
-      font-size: 0.85rem;
-      padding: 0.5rem;
+    .hidden { display: none; }
+    table { margin: auto; margin-top: 20px; border-collapse: collapse; }
+    td, th { border: 1px solid #ccc; padding: 8px 12px; }
+    input[type="number"] { width: 60px; }
+    .popup {
+      position: fixed;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -30%);
+      background: #fff;
+      padding: 20px;
+      border: 2px solid #000;
+      z-index: 1000;
     }
   </style>
 </head>
 <body>
-  <div class="container" id="main">
-    <h2>Select Mode</h2>
-    <button onclick="location.href='?mode=customer'">Customer</button>
-    <button onclick="promptAdmin()">Admin</button>
+
+<div id="main">
+  <h1>NFC Inventory System</h1>
+  <button onclick="location.href='?mode=customer'">Customer</button>
+  <button onclick="askPassword()">Admin</button>
+</div>
+
+<div id="customer" class="hidden">
+  <h2>Customer Page</h2>
+  <button onclick="scanTag()">Scan Product (NFC)</button>
+  <table id="summary">
+    <tr><th>Product</th><th>Quantity</th><th>Price</th><th>Action</th></tr>
+  </table>
+  <button onclick="submitOrder()">Submit Order</button>
+</div>
+
+<div id="admin" class="hidden">
+  <h2>Admin Page</h2>
+  <div>
+    <h3>Current Stock</h3>
+    <ul id="stockList"></ul>
   </div>
+  <div>
+    <h3>Add Stock</h3>
+    <select id="addItem">
+      <option>Cleanser</option><option>Toner</option><option>Serum</option>
+    </select>
+    <input type="number" id="addQty" placeholder="Quantity">
+    <button onclick="changeStock('add')">Add</button>
+  </div>
+  <div>
+    <h3>Remove Stock</h3>
+    <select id="removeItem">
+      <option>Cleanser</option><option>Toner</option><option>Serum</option>
+    </select>
+    <input type="number" id="removeQty" placeholder="Quantity">
+    <button onclick="changeStock('remove')">Remove</button>
+  </div>
+  <button onclick="location.href='?mode=server'">View Server Log</button>
+</div>
 
-  <script>
-    const products = {
-      "04:A1:1F:89:32:02:89": { name: "Cleanser", price: 10 },
-      "04:F1:45:8B:32:02:89": { name: "Toner", price: 15 },
-      "04:81:6B:94:32:02:89": { name: "Serum", price: 20 }
+<div id="receipt" class="hidden">
+  <h2>Receipt</h2>
+  <p id="orderNumber"></p>
+  <table id="receiptTable">
+    <tr><th>Product</th><th>Qty</th><th>Price</th></tr>
+  </table>
+  <p id="totalPrice"></p>
+  <button onclick="location.href='?mode=customer'">Back to Customer</button>
+</div>
+
+<div id="server" class="hidden">
+  <h2>Server Log</h2>
+  <ul id="logList"></ul>
+  <button onclick="location.href='?mode=admin'">Back to Admin</button>
+</div>
+
+<div id="popup" class="popup hidden">
+  <p id="popupProduct"></p>
+  Quantity: <input type="number" id="popupQty">
+  <button onclick="addToSummary()">Add</button>
+</div>
+
+<script>
+const productMap = {
+  "04:A1:1F:89:32:02:89": { name: "Cleanser", price: 10 },
+  "04:F1:45:8B:32:02:89": { name: "Toner", price: 15 },
+  "04:81:6B:94:32:02:89": { name: "Serum", price: 20 }
+};
+let order = [], currentProduct = null;
+
+function askPassword() {
+  const pass = prompt("Enter Admin Password:");
+  if (pass === "12345") location.href = "?mode=admin";
+}
+
+function scanTag() {
+  if (!("NDEFReader" in window)) return alert("NFC not supported.");
+  const reader = new NDEFReader();
+  reader.scan().then(() => {
+    reader.onreading = (e) => {
+      const id = Array.from(e.serialNumber).map(c => c.charCodeAt(0).toString(16).padStart(2, '0').toUpperCase()).join(':');
+      const prod = productMap[id];
+      if (!prod) return alert("Unknown tag: " + id);
+      currentProduct = prod;
+      document.getElementById("popupProduct").innerText = `Product: ${prod.name} - ฿${prod.price}`;
+      document.getElementById("popupQty").value = 1;
+      document.getElementById("popup").classList.remove("hidden");
     };
+  });
+}
 
-    const initData = () => {
-      if (!localStorage.stock) {
-        localStorage.stock = JSON.stringify({ Cleanser: 10, Toner: 10, Serum: 10 });
-      }
-      if (!localStorage.logs) {
-        localStorage.logs = JSON.stringify([]);
-      }
-      cleanupOldLogs();
-    };
+function addToSummary() {
+  const qty = parseInt(document.getElementById("popupQty").value);
+  if (qty > 0) order.push({ ...currentProduct, qty });
+  document.getElementById("popup").classList.add("hidden");
+  renderSummary();
+}
 
-    const cleanupOldLogs = () => {
-      let logs = JSON.parse(localStorage.logs || "[]");
-      const now = Date.now();
-      logs = logs.filter(log => now - log.timestamp < 2 * 86400 * 1000);
-      localStorage.logs = JSON.stringify(logs);
-    };
+function renderSummary() {
+  const table = document.getElementById("summary");
+  table.innerHTML = "<tr><th>Product</th><th>Qty</th><th>Price</th><th>Action</th></tr>";
+  order.forEach((item, i) => {
+    table.innerHTML += `<tr>
+      <td>${item.name}</td>
+      <td>${item.qty}</td>
+      <td>฿${item.price * item.qty}</td>
+      <td><button onclick="editItem(${i})">Edit</button><button onclick="delItem(${i})">Delete</button></td>
+    </tr>`;
+  });
+}
 
-    const addLog = (type, detail) => {
-      const logs = JSON.parse(localStorage.logs || "[]");
-      logs.push({ type, detail, timestamp: Date.now() });
-      localStorage.logs = JSON.stringify(logs);
-    };
+function editItem(i) {
+  const newQty = prompt("New quantity:", order[i].qty);
+  if (newQty > 0) order[i].qty = parseInt(newQty);
+  renderSummary();
+}
 
-    const getOrderNumber = () => {
-      const today = new Date().toISOString().slice(0, 10);
-      let count = JSON.parse(localStorage.orderCounter || '{}');
-      if (count.date !== today) {
-        count = { date: today, num: 1 };
-      } else {
-        count.num++;
-      }
-      localStorage.orderCounter = JSON.stringify(count);
-      return count.num.toString().padStart(3, '0');
-    };
+function delItem(i) {
+  order.splice(i, 1);
+  renderSummary();
+}
 
-    const promptAdmin = () => {
-      const code = prompt("Enter admin code:");
-      if (code === "12345") {
-        location.href = "?mode=admin";
-      } else {
-        alert("Wrong password!");
-      }
-    };
+function submitOrder() {
+  if (!order.length) return alert("Order is empty!");
+  const stock = JSON.parse(localStorage.getItem("stock") || "{}");
+  order.forEach(item => {
+    stock[item.name] = (stock[item.name] || 0) - item.qty;
+  });
+  localStorage.setItem("stock", JSON.stringify(stock));
+  const logs = JSON.parse(localStorage.getItem("logs") || "[]");
+  const now = new Date();
+  const orderNum = getOrderNumber();
+  logs.push({ type: "order", time: now.toISOString(), details: [...order], orderNum });
+  localStorage.setItem("logs", JSON.stringify(cleanLogs(logs)));
+  showReceipt(orderNum);
+  order = [];
+  renderSummary();
+}
 
-    const getQuery = () => {
-      return new URLSearchParams(location.search).get("mode");
-    };
+function getOrderNumber() {
+  const today = new Date().toDateString();
+  const last = JSON.parse(localStorage.getItem("lastOrder") || "{}");
+  if (last.date !== today) {
+    localStorage.setItem("lastOrder", JSON.stringify({ date: today, num: 1 }));
+    return "Order #001";
+  } else {
+    const newNum = last.num + 1;
+    localStorage.setItem("lastOrder", JSON.stringify({ date: today, num: newNum }));
+    return `Order #${String(newNum).padStart(3, '0')}`;
+  }
+}
 
-    const renderCustomerPage = () => {
-      document.body.innerHTML = `
-        <div class="container" id="customer">
-          <h2>Customer Page</h2>
-          <button onclick="scanNFC()">Scan NFC</button>
-          <div class="order-summary" id="summary"></div>
-          <button onclick="submitOrder()">Submit Order</button>
-        </div>`;
-      window.order = [];
-      updateSummary();
-    };
+function showReceipt(orderNum) {
+  document.getElementById("orderNumber").innerText = orderNum;
+  const table = document.getElementById("receiptTable");
+  table.innerHTML = "<tr><th>Product</th><th>Qty</th><th>Price</th></tr>";
+  let total = 0;
+  order.forEach(item => {
+    table.innerHTML += `<tr><td>${item.name}</td><td>${item.qty}</td><td>฿${item.qty * item.price}</td></tr>`;
+    total += item.qty * item.price;
+  });
+  document.getElementById("totalPrice").innerText = `Total: ฿${total}`;
+  show("receipt");
+}
 
-    const scanNFC = async () => {
-      try {
-        const ndef = new NDEFReader();
-        await ndef.scan();
-        ndef.onreading = event => {
-          const id = Array.from(event.serialNumber).map(c => c.charCodeAt(0).toString(16).padStart(2, '0')).join(':');
-          const product = products[id];
-          if (product) {
-            const qty = prompt(`How many ${product.name}?`);
-            if (qty && !isNaN(qty)) {
-              window.order.push({ name: product.name, qty: +qty, price: product.price });
-              updateSummary();
-            }
-          } else {
-            alert("Unknown NFC tag");
-          }
-        };
-      } catch (err) {
-        alert("NFC not supported or permission denied");
-      }
-    };
+function changeStock(type) {
+  const item = document.getElementById(type + "Item").value;
+  const qty = parseInt(document.getElementById(type + "Qty").value);
+  const stock = JSON.parse(localStorage.getItem("stock") || "{}");
+  stock[item] = (stock[item] || 0) + (type === "add" ? qty : -qty);
+  localStorage.setItem("stock", JSON.stringify(stock));
+  const logs = JSON.parse(localStorage.getItem("logs") || "[]");
+  logs.push({ type: type, time: new Date().toISOString(), details: `${item}: ${qty}` });
+  localStorage.setItem("logs", JSON.stringify(cleanLogs(logs)));
+  renderStock();
+}
 
-    const updateSummary = () => {
-      const div = document.getElementById("summary");
-      if (!window.order.length) {
-        div.innerHTML = "<i>No items yet</i>";
-        return;
-      }
-      div.innerHTML = window.order.map((item, i) => `
-        <div class="item">
-          ${item.name} x${item.qty} = ฿${item.qty * item.price}
-          <span>
-            <button class="small-btn" onclick="editItem(${i})">Edit</button>
-            <button class="small-btn" onclick="deleteItem(${i})">Delete</button>
-          </span>
-        </div>
-      `).join("");
-    };
+function renderStock() {
+  const stock = JSON.parse(localStorage.getItem("stock") || "{}");
+  const ul = document.getElementById("stockList");
+  ul.innerHTML = "";
+  ["Cleanser", "Toner", "Serum"].forEach(name => {
+    ul.innerHTML += `<li>${name}: ${stock[name] || 0}</li>`;
+  });
+}
 
-    const editItem = (i) => {
-      const qty = prompt("Enter new quantity:", window.order[i].qty);
-      if (qty && !isNaN(qty)) {
-        window.order[i].qty = +qty;
-        updateSummary();
-      }
-    };
+function cleanLogs(logs) {
+  const twoDays = Date.now() - 2 * 24 * 60 * 60 * 1000;
+  return logs.filter(log => new Date(log.time).getTime() >= twoDays);
+}
 
-    const deleteItem = (i) => {
-      window.order.splice(i, 1);
-      updateSummary();
-    };
+function renderLogs() {
+  const logs = JSON.parse(localStorage.getItem("logs") || "[]");
+  const list = document.getElementById("logList");
+  list.innerHTML = "";
+  logs.forEach(log => {
+    list.innerHTML += `<li>[${new Date(log.time).toLocaleString()}] ${log.type.toUpperCase()} → ${JSON.stringify(log.details)}</li>`;
+  });
+}
 
-    const submitOrder = () => {
-      const stock = JSON.parse(localStorage.stock);
-      window.order.forEach(item => {
-        stock[item.name] = (stock[item.name] || 0) - item.qty;
-      });
-      localStorage.stock = JSON.stringify(stock);
-      const orderNum = getOrderNumber();
-      const now = new Date();
-      const time = now.toLocaleString();
-      addLog("Order", { orderNum, items: window.order, time });
-      localStorage.lastReceipt = JSON.stringify({ orderNum, time, items: window.order });
-      location.href = "?mode=receipt";
-    };
+function show(section) {
+  ["main", "customer", "admin", "receipt", "server"].forEach(id => {
+    document.getElementById(id).classList.add("hidden");
+  });
+  document.getElementById(section).classList.remove("hidden");
+}
 
-    const renderReceiptPage = () => {
-      const receipt = JSON.parse(localStorage.lastReceipt || "{}");
-      const html = receipt.items.map(i =>
-        `<div>${i.name} x${i.qty} @ ฿${i.price} = ฿${i.qty * i.price}</div>`).join("");
-      const total = receipt.items.reduce((sum, i) => sum + i.qty * i.price, 0);
-      document.body.innerHTML = `
-        <div class="container receipt">
-          <h2>Receipt</h2>
-          <div><b>Order No:</b> ${receipt.orderNum}</div>
-          <div><b>Time:</b> ${receipt.time}</div>
-          <hr/>
-          ${html}
-          <hr/>
-          <div><b>Total:</b> ฿${total}</div>
-          <button onclick="location.href='/'">Back</button>
-        </div>`;
-    };
-
-    const renderAdminPage = () => {
-      const stock = JSON.parse(localStorage.stock);
-      document.body.innerHTML = `
-        <div class="container">
-          <h2>Admin Page</h2>
-          ${Object.entries(stock).map(([name, qty]) => `
-            <div class="item">${name}: ${qty}</div>`).join("")}
-          <div class="nav">
-            <button onclick="location.href='?mode=add'">Add Stock</button>
-            <button onclick="location.href='?mode=remove'">Remove Stock</button>
-          </div>
-          <button onclick="location.href='?mode=server'">Server Log</button>
-          <button onclick="location.href='/'">Back</button>
-        </div>`;
-    };
-
-    const renderStockEdit = (type) => {
-      const stock = JSON.parse(localStorage.stock);
-      document.body.innerHTML = `
-        <div class="container">
-          <h2>${type === "add" ? "Add" : "Remove"} Stock</h2>
-          ${Object.keys(stock).map(name => `
-            <label>${name}
-              <input type="number" id="${name}" value="0"/>
-            </label>`).join("")}
-          <button onclick="saveStock('${type}')">Submit</button>
-          <button onclick="location.href='?mode=admin'">Back</button>
-        </div>`;
-    };
-
-    const saveStock = (type) => {
-      const stock = JSON.parse(localStorage.stock);
-      Object.keys(stock).forEach(name => {
-        const qty = +document.getElementById(name).value;
-        if (!isNaN(qty)) {
-          stock[name] += (type === "add" ? qty : -qty);
-          addLog(type === "add" ? "AddStock" : "RemoveStock", {
-            name, qty, time: new Date().toLocaleString()
-          });
-        }
-      });
-      localStorage.stock = JSON.stringify(stock);
-      location.href = "?mode=admin";
-    };
-
-    const renderServerPage = () => {
-      const logs = JSON.parse(localStorage.logs || "[]");
-      document.body.innerHTML = `
-        <div class="container">
-          <h2>Server Log</h2>
-          ${logs.reverse().map(log => `
-            <div class="item">
-              <div><b>${log.type}</b> @ ${new Date(log.timestamp).toLocaleString()}</div>
-              <div style="font-size:0.9rem">${JSON.stringify(log.detail)}</div>
-            </div>
-          `).join("")}
-          <button onclick="location.href='?mode=admin'">Back</button>
-        </div>`;
-    };
-
-    initData();
-
-    switch(getQuery()) {
-      case "customer": renderCustomerPage(); break;
-      case "admin": renderAdminPage(); break;
-      case "add": renderStockEdit("add"); break;
-      case "remove": renderStockEdit("remove"); break;
-      case "server": renderServerPage(); break;
-      case "receipt": renderReceiptPage(); break;
-    }
-  </script>
+window.onload = () => {
+  const mode = new URLSearchParams(location.search).get("mode");
+  if (mode === "customer") show("customer");
+  else if (mode === "admin") { show("admin"); renderStock(); }
+  else if (mode === "server") { show("server"); renderLogs(); }
+};
+</script>
 </body>
 </html>
